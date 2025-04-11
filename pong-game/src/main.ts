@@ -1,4 +1,12 @@
 import './style.css'
+import { initRouter } from './router/index'
+
+// 如果没有 hash，则设置为 #/
+if (!location.hash) {
+  location.hash = '#/'
+}
+
+initRouter()
 
 const canvas = document.getElementById('gameCanvas') as HTMLCanvasElement
 const ctx = canvas.getContext('2d')
