@@ -12,26 +12,123 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	  </head>
   <body>
-	<div class="min-h-screen bg-gray-100 px-6 pt-6">
+	<div class="min-h-screen bg-gray-100 px-6 pt-6 relative z-10">
 		<!-- 顶部导航 -->
 		<div class="flex justify-between items-center mb-10">
 			<!-- 左侧 Logo -->
 			<div class="text-3xl font-bold tracking-widest font-mono text-black">42 PONG</div>
 		
-			<!-- 中间 Tabs：使用 absolute + translate 实现真正居中 -->
-			<div class="absolute left-1/2 -translate-x-1/2 flex space-x-8 text-lg font-medium">
-				<!-- 注意：默认加 text-black 和 tab-btn 类 -->
-				<div class="absolute left-1/2 -translate-x-1/2 flex space-x-8 text-lg font-medium" id="tabs">
-					<button data-tab="1" class="tab-btn px-4 py-2 rounded-sm text-black">Tab1</button>
-					<button data-tab="2" class="tab-btn px-4 py-2 rounded-sm text-black">Tab2</button>
-					<button data-tab="3" class="tab-btn px-4 py-2 rounded-sm text-black">Tab3</button>
-				</div>	
+		<!-- 顶部中间按钮栏 -->
+		<div class="flex justify-center space-x-6 items-center text-black font-medium text-sm mt-4" id="tabs">
+			<!-- Game Mode Dropdown -->
+			<div class="relative inline-block text-left">
+			<button id="modeDropdownBtn" class="px-4 py-2 bg-white rounded-full shadow hover:bg-gray-200 transition">
+				Game Mode ⌄
+			</button>
+			<div id="modeDropdownMenu" class="hidden absolute mt-2 w-40 bg-white shadow-lg rounded-md z-10">
+				<button class="block w-full text-left px-4 py-2 hover:bg-gray-100" data-mode="local">Double Local</button>
+				<button class="block w-full text-left px-4 py-2 hover:bg-gray-100" data-mode="remote">Double Remote</button>
+				<button class="block w-full text-left px-4 py-2 hover:bg-gray-100" data-mode="tournament">Tournament</button>
+			</div>
 			</div>
 		
-			<!-- 右侧 登录按钮 -->
-			<button class="bg-white px-4 py-2 rounded-full shadow text-sm font-semibold text-black hover:bg-gray-200 transition">
-			LOGIN
+			<!-- Rank -->
+			<button data-tab="rank" class="px-4 py-2 bg-white rounded-full shadow hover:bg-gray-200 transition">
+			Tournament Rank
 			</button>
+		
+			<!-- History -->
+			<button data-tab="history" class="px-4 py-2 bg-white rounded-full shadow hover:bg-gray-200 transition">
+			History
+			</button>
+		</div>
+			<!-- 右侧 登录按钮 -->
+			<button class="login-btn bg-white px-4 py-2 rounded-full shadow text-sm font-semibold text-black hover:bg-gray-200 transition">
+				LOGIN
+			</button>			  
+			<!-- Sign Up 弹出窗口 -->
+			<!-- 往下移动弹窗，试试 top-28 或更大 -->
+			<div id="signupPopup" class="hidden absolute top-28 right-6 w-80 bg-white rounded-xl shadow-lg p-6 z-50 transition transform duration-300 ease-in-out scale-95">
+				<h2 class="text-2xl font-bold mb-4">Sign up</h2>
+			
+				<!-- Google Sign-in 按钮 -->
+				<button class="w-full flex items-center justify-center gap-2 border border-gray-300 rounded-md py-2 mb-4 hover:bg-gray-100 transition text-black">
+					<img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5" />
+					<span class="font-medium">Sign up with Google</span>
+				</button>
+				  
+			
+				<div class="text-center text-gray-400 text-sm mb-4">or continue with email</div>
+			
+				<!-- Email input -->
+				<input
+				type="email"
+				placeholder="Your email"
+				class="w-full bg-white text-black border border-gray-300 rounded-md px-4 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-300"
+			  />
+			  
+			
+				<!-- Continue 按钮 -->
+				<button class="w-full bg-gradient-to-r from-pink-500 to-orange-400 text-white font-semibold py-2 rounded-md shadow">
+				Continue
+				</button>
+			
+				<div class="text-sm text-center text-gray-500 mt-4">
+				Already have an account?
+				<a href="#" class="text-orange-600 hover:underline">Sign in</a>
+				</div>
+			</div>
+
+		<!-- Tournament Rank 弹窗 -->
+<div id="rankPopup" class="opacity-0 pointer-events-none absolute top-32 left-1/2 -translate-x-1/2 w-[32rem] bg-white rounded-xl shadow-xl p-6 z-40 transition-all duration-300 ease-in-out transform scale-95">
+	<div class="flex justify-between items-center mb-4">
+		<h2 class="text-2xl font-bold text-black">Tournament Rank</h2>
+		<button id="closeRank" class="text-gray-500 hover:text-black text-xl">&times;</button>
+	</div>
+	<div class="space-y-4">
+	  <!-- 示例用户 -->
+	  <div class="flex items-center justify-between border-b pb-2">
+		<div class="flex items-center gap-3">
+		  <img class="w-10 h-10 rounded-full" src="https://i.pravatar.cc/40?u=1" alt="avatar">
+		  <span class="font-medium text-gray-800">PlayerOne</span>
+		</div>
+		<span class="text-gray-600 font-semibold">1250 pts</span>
+	  </div>
+	  <div class="flex items-center justify-between border-b pb-2">
+		<div class="flex items-center gap-3">
+		  <img class="w-10 h-10 rounded-full" src="https://i.pravatar.cc/40?u=2" alt="avatar">
+		  <span class="font-medium text-gray-800">PlayerTwo</span>
+		</div>
+		<span class="text-gray-600 font-semibold">1190 pts</span>
+	  </div>
+	</div>
+  </div>
+  
+  <!-- History 弹窗 -->
+  <div id="historyPopup" class="opacity-0 pointer-events-none absolute top-32 left-1/2 -translate-x-1/2 w-[36rem] bg-white rounded-xl shadow-xl p-6 z-40 transition-all duration-300 ease-in-out transform scale-95">
+	<div class="flex justify-between items-center mb-4">
+		<h2 class="text-2xl font-bold text-black">History</h2>
+		<button id="closeHistory" class="text-gray-500 hover:text-black text-xl">&times;</button>
+	</div>
+	<div class="space-y-4">
+	  <!-- 一条战绩 -->
+	  <div class="flex items-center justify-between border-b pb-2">
+		<div class="flex items-center gap-2">
+		  <img class="w-8 h-8 rounded-full" src="https://i.pravatar.cc/40?u=3" alt="left">
+		  <span class="text-sm font-semibold">Alice</span>
+		  <span class="text-gray-400 text-xs">vs</span>
+		  <span class="text-sm font-semibold">Bob</span>
+		  <img class="w-8 h-8 rounded-full" src="https://i.pravatar.cc/40?u=4" alt="right">
+		</div>
+		<div class="text-right">
+		  <p class="text-sm text-gray-600">2024-04-11</p>
+		  <p class="text-sm font-bold text-black">11 : 6</p>
+		</div>
+	  </div>
+	</div>
+  </div>
+  
+  
 		</div>
 		<!-- 上方控制区 -->
 		<div class="flex flex-col items-center mb-4">
@@ -51,10 +148,110 @@
 		
 		<!-- 控制按钮 -->
 		<div class="text-center mt-6">
-			<button id="startBtn" class="bg-blue-500 text-white px-4 py-2 rounded-md shadow">
-			Start Game
-			</button>
+			<button id="startBtn" class="px-4 py-2 bg-white text-black rounded-full shadow hover:bg-gray-200 transition">
+				Start Game
+			</button>			  
 		</div>
-    <script type="module" src="/src/main.ts"></script>
+<!-- 主游戏逻辑 -->
+<script type="module" src="/src/main.ts"></script>
+
+<!-- ✅ 单独写一段原生 JS 处理下拉菜单 -->
+<script>
+	const dropdownBtn = document.getElementById('modeDropdownBtn');
+	const dropdownMenu = document.getElementById('modeDropdownMenu');
+
+	dropdownBtn?.addEventListener('click', (e) => {
+		e.stopPropagation(); // 防止触发 document 的 click
+		dropdownMenu.classList.toggle('hidden');
+	});
+
+	document.addEventListener('click', (e) => {
+		if (!dropdownBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
+			dropdownMenu.classList.add('hidden');
+		}
+	});
+
+	dropdownMenu.querySelectorAll('[data-mode]').forEach((item) => {
+		item.addEventListener('click', (e) => {
+			const mode = e.target.getAttribute('data-mode');
+			console.log('Chosen Mode：', mode);
+			dropdownMenu.classList.add('hidden');
+
+			// ✅ 更新按钮文字为当前选择（可选）
+			dropdownBtn.innerText = `Mode: ${e.target.innerText} ⌄`;
+		});
+	});
+</script>
+
+<script>
+	const loginBtn = document.querySelector('.login-btn');
+	const signupPopup = document.getElementById('signupPopup');
+
+	loginBtn?.addEventListener('click', (e) => {
+	e.stopPropagation();
+	signupPopup.classList.toggle('hidden');
+	signupPopup.classList.toggle('scale-100'); // 👈 添加动画触发类
+	signupPopup.classList.toggle('scale-95');  // 👈 同时移除初始缩小
+	});
+
+
+	document.addEventListener('click', (e) => {
+		if (!signupPopup.contains(e.target) && !loginBtn.contains(e.target)) {
+			signupPopup.classList.add('hidden');
+		}
+	});
+</script>
+
+<script>
+	const rankBtn = document.querySelector('[data-tab="rank"]');
+	const historyBtn = document.querySelector('[data-tab="history"]');
+	const rankPopup = document.getElementById('rankPopup');
+	const historyPopup = document.getElementById('historyPopup');
+	const closeRank = document.getElementById('closeRank');
+	const closeHistory = document.getElementById('closeHistory');
+  
+	// 控制 Rank 弹窗
+	rankBtn.addEventListener('click', (e) => {
+	  e.stopPropagation();
+	  rankPopup.classList.toggle('opacity-0');
+	  rankPopup.classList.toggle('pointer-events-none');
+	  rankPopup.classList.toggle('scale-95');
+	  rankPopup.classList.toggle('scale-100');
+	});
+  
+	// 控制 History 弹窗
+	historyBtn.addEventListener('click', (e) => {
+	  e.stopPropagation();
+	  historyPopup.classList.toggle('opacity-0');
+	  historyPopup.classList.toggle('pointer-events-none');
+	  historyPopup.classList.toggle('scale-95');
+	  historyPopup.classList.toggle('scale-100');
+	});
+  
+	// 关闭按钮
+	closeRank.addEventListener('click', () => {
+	  rankPopup.classList.add('opacity-0', 'pointer-events-none', 'scale-95');
+	  rankPopup.classList.remove('scale-100');
+	});
+  
+	closeHistory.addEventListener('click', () => {
+	  historyPopup.classList.add('opacity-0', 'pointer-events-none', 'scale-95');
+	  historyPopup.classList.remove('scale-100');
+	});
+  
+	// 点击外部关闭
+	document.addEventListener('click', (e) => {
+	  if (!rankPopup.contains(e.target) && !rankBtn.contains(e.target)) {
+		rankPopup.classList.add('opacity-0', 'pointer-events-none', 'scale-95');
+		rankPopup.classList.remove('scale-100');
+	  }
+	  if (!historyPopup.contains(e.target) && !historyBtn.contains(e.target)) {
+		historyPopup.classList.add('opacity-0', 'pointer-events-none', 'scale-95');
+		historyPopup.classList.remove('scale-100');
+	  }
+	});
+  </script>
+
+
   </body>
 </html>
