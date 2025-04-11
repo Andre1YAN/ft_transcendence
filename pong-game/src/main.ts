@@ -11,7 +11,7 @@ const winnerDisplay = document.getElementById('winner')!
 // 游戏配置
 const paddleWidth = 10, paddleHeight = 100, ballSize = 10
 const paddleSpeed = 6
-const maxScore = 5
+const maxScore = 11
 let leftScore = 0, rightScore = 0
 
 // 状态变量
@@ -52,9 +52,10 @@ function updateScore() {
 }
 
 function showWinner(winner: string) {
-  isGameRunning = false
-  winnerDisplay.textContent = `${winner} Wins!`
-}
+	isGameRunning = false
+	if (animationId) cancelAnimationFrame(animationId)
+	winnerDisplay.textContent = `${winner} Wins!`
+}  
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'w') leftPaddleUp = true
@@ -145,12 +146,25 @@ function update() {
   if (rightPaddleDown && rightPaddleY + paddleHeight < canvas.height) rightPaddleY += paddleSpeed
 }
 
-
-function gameLoop() {
-  draw()
-  update()
-  animationId = requestAnimationFrame(gameLoop)
-}
+function gameLoop() 
+{
+	if (!isGameRunning) return  // ✅ 游戏结束时停止 gameLoop
+  
+	draw()
+	update()
+	animationId = requestAnimationFrame(gameLoop)
+}  
 
 // 按钮绑定
 startBtn.addEventListener('click', resetGame)
+
+// tab 切换高亮逻辑
+const tabs = document.querySelectorAll<HTMLButtonElement>('.tab-btn')
+
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    tabs.forEach(t => t.classList.remove('active-tab'))
+    tab.classList.add('active-tab')
+  })
+})
+

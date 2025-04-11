@@ -1,24 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Pong Game</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  </head>
+	<head>
+		<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+		<style>
+			.font-press {
+			  font-family: 'Press Start 2P', monospace;
+			}
+		  </style>
+		<meta charset="UTF-8" />
+		<title class="text-3xl font-press">Pong Game</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	  </head>
   <body>
-    <div style="text-align: center; margin-top: 20px;">
-      <button id="startBtn">Start Game</button>
-      <div style="margin-top: 10px; font-size: 20px;">
-        <span id="leftScore">0</span> : <span id="rightScore">0</span>
-      </div>
-      <div id="winner" style="margin-top: 10px; font-size: 24px; color: yellow;"></div>
-    </div>
-    <canvas
-      id="gameCanvas"
-      width="800"
-      height="600"
-      style="display: block; margin: 30px auto; background: #000"
-    ></canvas>
+	<div class="min-h-screen bg-gray-100 px-6 pt-6">
+		<!-- 顶部导航 -->
+		<div class="flex justify-between items-center mb-10">
+			<!-- 左侧 Logo -->
+			<div class="text-3xl font-bold tracking-widest font-mono text-black">42 PONG</div>
+		
+			<!-- 中间 Tabs：使用 absolute + translate 实现真正居中 -->
+			<div class="absolute left-1/2 -translate-x-1/2 flex space-x-8 text-lg font-medium">
+				<!-- 注意：默认加 text-black 和 tab-btn 类 -->
+				<div class="absolute left-1/2 -translate-x-1/2 flex space-x-8 text-lg font-medium" id="tabs">
+					<button data-tab="1" class="tab-btn px-4 py-2 rounded-sm text-black">Tab1</button>
+					<button data-tab="2" class="tab-btn px-4 py-2 rounded-sm text-black">Tab2</button>
+					<button data-tab="3" class="tab-btn px-4 py-2 rounded-sm text-black">Tab3</button>
+				</div>	
+			</div>
+		
+			<!-- 右侧 登录按钮 -->
+			<button class="bg-white px-4 py-2 rounded-full shadow text-sm font-semibold text-black hover:bg-gray-200 transition">
+			LOGIN
+			</button>
+		</div>
+		<!-- 上方控制区 -->
+		<div class="flex flex-col items-center mb-4">
+			<!-- 比分 -->
+			<div class="text-xl text-black font-bold">
+			<span id="leftScore">0</span> : <span id="rightScore">0</span>
+			</div>
+		
+			<!-- 胜利通报：直接放在比分下方 -->
+			<div id="winner" class="text-xl text-yellow-500 font-semibold mt-2"></div>
+		</div>
+		
+		<!-- Canvas -->
+		<div class="flex justify-center">
+			<canvas id="gameCanvas" width="800" height="500" class="bg-black shadow-lg"></canvas>
+		</div>
+		
+		<!-- 控制按钮 -->
+		<div class="text-center mt-6">
+			<button id="startBtn" class="bg-blue-500 text-white px-4 py-2 rounded-md shadow">
+			Start Game
+			</button>
+		</div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
