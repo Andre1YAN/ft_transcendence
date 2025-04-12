@@ -44,7 +44,8 @@
 		"playTournament": "Tournoi",
 		"recent": "Activité récente",
 		"tip": "Consultez votre historique ou défiez vos amis !",
-		"tournamentMode": "Mode Tournoi"
+		"tournamentMode": "Mode Tournoi",
+		"wins": "a gagné !"
 	},
 	"local": {
 		"title": "Mode local à deux",
@@ -86,6 +87,7 @@
 		"start": "Démarrer le tournoi",
 		"player": "Joueur",
 		"modeTitle": "Mode Tournoi",
-		"rank": "Classement du tournoi"
+		"rank": "Classement du tournoi",
+		"duplicateWarning": "Les noms des joueurs doivent être uniques."
 	  }
   }
