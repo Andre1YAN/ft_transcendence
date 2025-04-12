@@ -129,3 +129,42 @@ button:focus-visible {
 	@apply text-sm text-gray-700;
   }
   
+
+  @keyframes glowPulse {
+	0%, 100% {
+	  box-shadow: 0 0 12px rgba(255, 100, 255, 0.3), 0 0 24px rgba(100, 200, 255, 0.2);
+	}
+	50% {
+	  box-shadow: 0 0 20px rgba(255, 100, 255, 0.6), 0 0 40px rgba(100, 200, 255, 0.4);
+	}
+  }
+  
+  .btn-glow {
+	animation: glowPulse 2.5s ease-in-out infinite;
+  }
+  
+  @keyframes buttonGlow {
+	0%, 100% {
+	  box-shadow: 0 0 10px rgba(0, 128, 255, 0.4), 0 0 20px rgba(0, 128, 255, 0.2);
+	}
+	50% {
+	  box-shadow: 0 0 20px rgba(0, 128, 255, 0.8), 0 0 40px rgba(0, 128, 255, 0.5);
+	}
+  }
+  
+  .glow-pulse {
+	animation: buttonGlow 2.5s ease-in-out infinite;
+  }
+  
+  /* 可选：美化滚动条 */
+#tournamentPanel::-webkit-scrollbar {
+	width: 6px;
+  }
+  #tournamentPanel::-webkit-scrollbar-thumb {
+	background-color: rgba(59, 130, 246, 0.6); /* blue-500 */
+	border-radius: 10px;
+  }
+  #tournamentPanel::-webkit-scrollbar-track {
+	background: transparent;
+  }
+  
