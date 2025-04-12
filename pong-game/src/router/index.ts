@@ -7,7 +7,9 @@ const routes: Record<string, string> = {
 	'/history': 'HistoryPage',
 	'/profile': 'ProfilePage',
 	'/friends': 'FriendsPage',
-	'/dashboard': 'DashboardPage',
+	'/local': 'LocalGamePage',
+	'/tournament': 'TournamentPage',
+	'/tournament_setup': 'TournamentSetupPage'
   }  
   
   export function initRouter() {
