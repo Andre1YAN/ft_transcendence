@@ -12,16 +12,13 @@
         font-family: 'Press Start 2P', monospace;
       }
     </style>
-
     <!-- 样式入口（Tailwind 构建产物 or Vite 编译后的 CSS） -->
     <link rel="stylesheet" href="/style.css" />
   </head>
 
-  <body class="bg-gray-100">
-    <!-- SPA 挂载点 -->
-    <div id="app"></div>
-
-    <!-- 应用入口 -->
-    <script type="module" src="/src/main.ts"></script>
+  <body class="relative bg-gradient-to-b from-gray-100 via-gray-200 to-gray-300">
+	<div id="app"></div>
+	<script type="module" src="/src/main.ts"></script>
   </body>
+  
 </html>
