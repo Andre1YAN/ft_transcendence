@@ -9,5 +9,7 @@ export default {
 	},
 	},
 	plugins: [],
+	future: {
+		hoverOnlyWhenSupported: true
+	} // ✅ 明确兼容所有现代浏览器
 }
-

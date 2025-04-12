@@ -1,12 +1,9 @@
-// ✅ LocalGamePage.ts 修复版
 import { GameCanvas } from '../components/GameCanvas'
 import { renderNavbar, bindNavbarEvents } from '../components/Navbar'
 import { initStars } from '../components/initStars'
 import { t } from '../State/i18n'
 
 export function render() {
-  console.log('[LocalGamePage] render called')
-
   let game: GameCanvas | null = null
 
   document.body.innerHTML = `
@@ -24,7 +21,10 @@ export function render() {
       </div>
 
       <div class="flex justify-center">
-        <canvas id="gameCanvas" width="800" height="500" class="bg-black shadow-2xl rounded-lg"></canvas>
+        <canvas
+          id="gameCanvas"
+          class="w-full max-w-[800px] aspect-[16/10] bg-black shadow-2xl rounded-lg"
+        ></canvas>
       </div>
 
       <div class="text-center mt-6">
@@ -40,13 +40,15 @@ export function render() {
   const startBtn = document.getElementById('startBtn') as HTMLButtonElement
   const winnerEl = document.getElementById('winner')!
 
+  const isMobile = window.innerWidth < 768
+  const scale = isMobile ? 1.15 : 1
+
   game = new GameCanvas('gameCanvas', (winner) => {
-    // 只展示胜利信息，不再处理计分逻辑
     winnerEl.textContent = winner === 'left' ? t('local.leftWin') : t('local.rightWin')
-  })
+  }, scale)
 
   startBtn.addEventListener('click', () => {
-    winnerEl.textContent = '' // 清空上一场的胜利文字
+    winnerEl.textContent = ''
     game!.start(true)
   })
 

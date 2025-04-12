@@ -44,7 +44,8 @@
 		"playTournament": "锦标赛",
 		"recent": "最近活动",
 		"tip": "查看你的历史记录或邀请朋友一起游戏！",
-		"tournamentMode": "锦标赛模式"
+		"tournamentMode": "锦标赛模式",
+		"wins": "获胜！"
 	},
 	"local": {
 		"title": "双人本地模式",
@@ -86,6 +87,7 @@
 		"start": "开始锦标赛",
 		"player": "玩家",
 		"modeTitle": "锦标赛模式",
-		"rank": "锦标赛排名"
+		"rank": "锦标赛排名",
+		"duplicateWarning": "玩家姓名必须唯一。"
 	  }
   }

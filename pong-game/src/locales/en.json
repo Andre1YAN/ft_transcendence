@@ -83,11 +83,12 @@
 		"back": "← Back to Game"
 	  },
 	"tournament": {
-		"setupTitle": "Tournament Setup",
-		"addPlayer": "Add Player",
-		"start": "Start Tournament",
-		"player": "Player",
-		"modeTitle": "Tournament Mode",
-		"rank": "Tournament Rank"
-	  }
+	"setupTitle": "Tournament Setup",
+	"addPlayer": "Add Player",
+	"start": "Start Tournament",
+	"player": "Player",
+	"modeTitle": "Tournament Mode",
+	"rank": "Tournament Rank",
+	"duplicateWarning": "Player names must be unique."
+	}
   }

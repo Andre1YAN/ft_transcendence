@@ -14,22 +14,26 @@ export function render() {
 
       <h1 class="text-3xl text-blue-200 mt-10 mb-6 text-center">${t('history.title')}</h1>
 
-      <div class="backdrop-blur-md bg-white/5 border border-white/10 rounded-xl shadow-xl max-w-3xl mx-auto p-6 space-y-4">
-        <div class="flex justify-between items-center border-b border-white/10 pb-2">
-          <div class="flex items-center gap-2">
-            <img class="w-8 h-8 rounded-full" src="https://i.pravatar.cc/40?u=3" alt="left">
-            <span class="text-sm">Alice</span>
-            <span class="text-gray-400 text-xs">${t('history.vs')}</span>
-            <span class="text-sm">Bob</span>
-            <img class="w-8 h-8 rounded-full" src="https://i.pravatar.cc/40?u=4" alt="right">
+      <!-- 历史战绩 -->
+      <div class="backdrop-blur-md bg-white/5 border border-white/10 rounded-xl shadow-xl max-w-3xl mx-auto p-6 space-y-4 max-h-[300px] overflow-y-auto">
+        ${[1, 2, 3, 4, 5, 6].map(i => `
+          <div class="flex justify-between items-center border-b border-white/10 pb-2">
+            <div class="flex items-center gap-2">
+              <img class="w-8 h-8 rounded-full" src="https://i.pravatar.cc/40?u=${i}" alt="left">
+              <span class="text-sm">Alice</span>
+              <span class="text-gray-400 text-xs">${t('history.vs')}</span>
+              <span class="text-sm">Bob</span>
+              <img class="w-8 h-8 rounded-full" src="https://i.pravatar.cc/40?u=${i + 10}" alt="right">
+            </div>
+            <div class="text-right">
+              <p class="text-sm opacity-70">2024-04-${10 + i}</p>
+              <p class="text-sm font-bold text-white">${10 + i} : ${Math.floor(Math.random() * 12)}</p>
+            </div>
           </div>
-          <div class="text-right">
-            <p class="text-sm opacity-70">2024-04-11</p>
-            <p class="text-sm font-bold text-white">11 : 6</p>
-          </div>
-        </div>
+        `).join('')}
       </div>
 
+      <!-- 数据概览 -->
       <div class="max-w-4xl mx-auto mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
         <div class="bg-white/5 rounded-xl p-4 shadow border border-white/10 text-center">
           <h3 class="text-lg text-blue-100 mb-2">${t('history.winRate')}</h3>
@@ -45,11 +49,17 @@ export function render() {
         </div>
       </div>
 
+      <!-- 折线图 -->
       <div class="mt-10 max-w-4xl mx-auto bg-white/5 rounded-xl p-6 shadow border border-white/10">
         <h2 class="text-center text-xl text-blue-200 mb-4">${t('history.performance')}</h2>
-        <canvas id="historyChart" class="w-full h-64"></canvas>
+        <div class="w-full overflow-x-auto">
+          <div class="min-w-[600px]">
+            <canvas id="historyChart" class="w-full aspect-[2/1]"></canvas>
+          </div>
+        </div>
       </div>
 
+      <!-- 返回按钮 -->
       <div class="text-center mt-10 mb-10">
         <button 
           onclick="location.hash = '#/main'" 
@@ -94,7 +104,11 @@ export function render() {
         plugins: {
           legend: {
             labels: {
-              color: '#fff'
+              color: '#fff',
+              font: {
+                size: 12,
+                family: 'sans-serif'
+              }
             }
           }
         },

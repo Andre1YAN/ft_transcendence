@@ -1,4 +1,3 @@
-// src/components/GameCanvas.ts
 import { t } from '../State/i18n'
 
 export type GameMode = 'local' | 'tournament'
@@ -17,10 +16,10 @@ export class GameCanvas {
   private animationId: number | null = null
   private isRunning = false
 
-  private paddleWidth = 10
-  private paddleHeight = 100
-  private ballSize = 10
-  private paddleSpeed = 6
+  private paddleWidth: number
+  private paddleHeight: number
+  private ballSize: number
+  private paddleSpeed: number
   private maxScore = 11
   private server: 'left' | 'right' = Math.random() < 0.5 ? 'left' : 'right'
 
@@ -33,7 +32,8 @@ export class GameCanvas {
 
   constructor(
     canvasId: string,
-    private onGameEnd?: (winner: 'left' | 'right') => void
+    private onGameEnd?: (winner: 'left' | 'right') => void,
+    private scale: number = 1 // ✅ 新增参数，默认为 1
   ) {
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement
     if (!canvas) throw new Error(`Canvas element with id "${canvasId}" not found`)
@@ -41,33 +41,44 @@ export class GameCanvas {
     if (!ctx) throw new Error('Canvas context not found')
     this.canvas = canvas
     this.ctx = ctx
+	
+	// 设置 canvas 的内部分辨率与其 CSS 尺寸一致
+	const rect = this.canvas.getBoundingClientRect()
+	this.canvas.width = rect.width
+	this.canvas.height = rect.height
+
+
+    // ✅ 尺寸基于 scale 初始化
+    this.paddleWidth = 10 * this.scale
+    this.paddleHeight = 100 * this.scale
+    this.ballSize = 10 * this.scale
+    this.paddleSpeed = 6 * this.scale
 
     this.handleKeyboard()
   }
 
   public start(resetScore: boolean = false) {
-	if (resetScore) {
-	  this.leftScore = 0
-	  this.rightScore = 0
-	}
-  
-	this.leftY = this.canvas.height / 2 - this.paddleHeight / 2
-	this.rightY = this.canvas.height / 2 - this.paddleHeight / 2
-	this.server = Math.random() < 0.5 ? 'left' : 'right'
-	this.resetBall()
-	this.clearWinner()
-	this.updateScoreDOM()
-	this.isRunning = true
-  
-	if (this.animationId) cancelAnimationFrame(this.animationId)
-	this.gameLoop()
+    if (resetScore) {
+      this.leftScore = 0
+      this.rightScore = 0
+    }
+
+    this.leftY = this.canvas.height / 2 - this.paddleHeight / 2
+    this.rightY = this.canvas.height / 2 - this.paddleHeight / 2
+    this.server = Math.random() < 0.5 ? 'left' : 'right'
+    this.resetBall()
+    this.clearWinner()
+    this.updateScoreDOM()
+    this.isRunning = true
+
+    if (this.animationId) cancelAnimationFrame(this.animationId)
+    this.gameLoop()
   }
-  
 
   public resetScore() {
-	this.leftScore = 0
-	this.rightScore = 0
-	this.updateScoreDOM()
+    this.leftScore = 0
+    this.rightScore = 0
+    this.updateScoreDOM()
   }
 
   public stop() {
@@ -87,7 +98,7 @@ export class GameCanvas {
   private resetBall() {
     this.ballX = this.canvas.width / 2
     this.ballY = this.canvas.height / 2
-    const speed = 5
+    const speed = 5 * this.scale // ✅ 速度也缩放
     const angle = (Math.random() * 0.6 - 0.3)
     const direction = this.server === 'left' ? 1 : -1
     this.ballSpeedX = Math.cos(angle) * speed * direction
@@ -118,31 +129,31 @@ export class GameCanvas {
       this.ballSpeedX = -this.ballSpeedX
     }
 
-	if (this.ballX < 0) {
-		this.rightScore++
-		this.updateScoreDOM()
-		if (this.rightScore >= this.maxScore) {
-		  this.isRunning = false
-		  this.showWinner('Right')
-		  this.onGameEnd?.('right')
-		  return // ✅ 加上这个！
-		}
-		this.updateServer()
-		this.resetBall()
-	  }
-	  
-	  if (this.ballX > this.canvas.width) {
-		this.leftScore++
-		this.updateScoreDOM()
-		if (this.leftScore >= this.maxScore) {
-		  this.isRunning = false
-		  this.showWinner('Left')
-		  this.onGameEnd?.('left')
-		  return // ✅ 加上这个！
-		}
-		this.updateServer()
-		this.resetBall()
-	  }	  
+    if (this.ballX < 0) {
+      this.rightScore++
+      this.updateScoreDOM()
+      if (this.rightScore >= this.maxScore) {
+        this.isRunning = false
+        this.showWinner('Right')
+        this.onGameEnd?.('right')
+        return
+      }
+      this.updateServer()
+      this.resetBall()
+    }
+
+    if (this.ballX > this.canvas.width) {
+      this.leftScore++
+      this.updateScoreDOM()
+      if (this.leftScore >= this.maxScore) {
+        this.isRunning = false
+        this.showWinner('Left')
+        this.onGameEnd?.('left')
+        return
+      }
+      this.updateServer()
+      this.resetBall()
+    }
 
     if (this.keys.w && this.leftY > 0) this.leftY -= this.paddleSpeed
     if (this.keys.s && this.leftY + this.paddleHeight < this.canvas.height) this.leftY += this.paddleSpeed
@@ -183,8 +194,8 @@ export class GameCanvas {
 
   private showWinner(winner: string) {
     const text = document.getElementById('winner')
-    if (text) 
-		text.textContent = winner === 'left' ? t('local.leftWin') : t('local.rightWin')
+    if (text)
+      text.textContent = winner === 'left' ? t('local.leftWin') : t('local.rightWin')
   }
 
   private clearWinner() {
