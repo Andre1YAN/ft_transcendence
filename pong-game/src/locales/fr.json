@@ -1,0 +1,91 @@
+{
+	"welcome": {
+		"title": "Bienvenue à 42 PONG",
+		"description": "Classique rencontre moderne. Affrontez vos amis, grimpez les classements et rejoignez les tournois.",
+		"login": "Connexion",
+		"register": "S'inscrire"
+	  },
+	"navbar": {
+		"gameMode": "Mode de jeu",
+		"local": "Double Local",
+		"tournament": "Tournoi",
+		"profile": "Profil",
+		"friends": "Amis",
+		"history": "Historique"
+		},
+	"signup": {
+		"title": "🌟 Créer un compte",
+		"google": "S'inscrire avec Google",
+		"or": "ou inscrivez-vous avec un e-mail",
+		"emailPlaceholder": "Adresse e-mail",
+		"passwordPlaceholder": "Mot de passe",
+		"submit": "S'inscrire",
+		"footer": "Vous avez déjà un compte ?",
+		"login": "Connexion"
+		},
+	"login": {
+		"title": "👋 Bon retour",
+		"loginGoogle": "Se connecter avec Google",
+		"or": "ou connectez-vous avec un email",
+		"emailPlaceholder": "Adresse e-mail",
+		"passwordPlaceholder": "Mot de passe",
+		"submit": "Connexion",
+		"noAccount": "Vous n’avez pas de compte ?",
+		"signup": "S’inscrire"
+		},
+	"main": {
+		"mode": "Mode",
+		"start": "Démarrer le jeu",
+		"tournamentRank": "Classement",
+		"points": "pts",
+		"welcome": "Bon retour",
+		"description": "Prêt à jouer ? Choisissez un mode et commencez !",
+		"playLocal": "Match local",
+		"playTournament": "Tournoi",
+		"recent": "Activité récente",
+		"tip": "Consultez votre historique ou défiez vos amis !",
+		"tournamentMode": "Mode Tournoi"
+	},
+	"local": {
+		"title": "Mode local à deux",
+		"leftWin": "Le joueur gauche a gagné !",
+		"rightWin": "Le joueur droit a gagné !"
+	},
+	"profile": {
+		"title": "👤 Profil",
+		"upload": "Télécharger l'avatar",
+		"displayName": "Nom d'affichage",
+		"wins": "Victoires",
+		"losses": "Défaites",
+		"update": "Mettre à jour",
+		"historyTitle": "Historique des matchs",
+		"matchDate": "2024-04-11",
+		"matchResult": "GAGNÉ",
+		"back": "← Retour au jeu"
+	  },
+	"history": {
+		"title": "📜 Historique des matchs",
+		"vs": "contre",
+		"winRate": "🏆 Taux de victoire",
+		"avgScore": "📈 Score moyen",
+		"avgLoss": "📉 Perte moyenne",
+		"performance": "📊 Aperçu des performances",
+		"back": "← Retour au jeu",
+		"yourScore": "Votre score",
+		"opponentScore": "Score adverse"
+	  },
+	"friends": {
+		"title": "👥 Amis",
+		"online": "● En ligne",
+		"offline": "● Hors ligne",
+		"back": "← Retour au jeu"
+	  },
+	"tournament": {
+		"setupTitle": "Configuration du Tournoi",
+		"addPlayer": "Ajouter un joueur",
+		"start": "Démarrer le tournoi",
+		"player": "Joueur",
+		"modeTitle": "Mode Tournoi",
+		"rank": "Classement du tournoi"
+	  }
+  }

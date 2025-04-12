@@ -1,0 +1,93 @@
+{
+	"welcome": {
+		"title": "Welcome to 42 PONG",
+		"description": "Classic meets modern. Compete, climb the ranks, and join tournaments with your friends.",
+		"login": "Login",
+		"register": "Register"
+	},
+	"signup": {
+		"title": "🌟 Create Account",
+		"google": "Sign up with Google",
+		"or": "or sign up with email",
+		"emailPlaceholder": "Email address",
+		"passwordPlaceholder": "Password",
+		"submit": "Register",
+		"footer": "Already have an account?",
+		"login": "Login"
+	  },
+	"login": {
+		"title": "👋 Welcome Back",
+		"loginGoogle": "Login with Google",
+		"or": "or login with email",
+		"emailPlaceholder": "Email address",
+		"passwordPlaceholder": "Password",
+		"submit": "Login",
+		"noAccount": "Don’t have an account?",
+		"signup": "Register"
+	  },
+	"navbar": {
+		"mode": "Mode",
+		"gameMode": "Game Mode",
+		"local": "Double Local",
+		"tournament": "Tournament",
+		"profile": "Profile",
+		"friends": "Friends",
+		"history": "History"
+		},
+	"main": {
+		"mode": "Mode",
+		"start": "Start Game",
+		"wins": "wins!",
+		"points": "pts",
+		"tournamentRank": "Tournament Rank", 
+		"welcome": "Welcome back",
+		"description": "Ready to compete? Choose your mode and start playing!",
+		"playLocal": "Local Match",
+		"playTournament": "Tournament",
+		"recent": "Recent Activity",
+		"tip": "Check your history or challenge your friends!",
+		"tournamentMode": "Tournament Mode"
+	},
+	"local": {
+		"title": "Double Local Mode",
+		"leftWin": "Left Player Wins!",
+		"rightWin": "Right Player Wins!"
+	},
+	"profile": {
+		"title": "👤 Profile",
+		"upload": "Upload Avatar",
+		"displayName": "Display Name",
+		"wins": "Wins",
+		"losses": "Losses",
+		"update": "Update Info",
+		"historyTitle": "Match History",
+		"matchDate": "2024-04-11",
+		"matchResult": "WIN",
+		"back": "← Back to Game"
+	  },
+	"history": {
+		"title": "📜 Match History",
+		"vs": "vs",
+		"winRate": "🏆 Win Rate",
+		"avgScore": "📈 Avg Score",
+		"avgLoss": "📉 Avg Loss",
+		"performance": "📊 Performance Overview",
+		"back": "← Back to Game",
+		"yourScore": "Your Score",
+		"opponentScore": "Opponent Score"
+	  },
+	"friends": {
+		"title": "👥 Friends",
+		"online": "● Online",
+		"offline": "● Offline",
+		"back": "← Back to Game"
+	  },
+	"tournament": {
+		"setupTitle": "Tournament Setup",
+		"addPlayer": "Add Player",
+		"start": "Start Tournament",
+		"player": "Player",
+		"modeTitle": "Tournament Mode",
+		"rank": "Tournament Rank"
+	  }
+  }

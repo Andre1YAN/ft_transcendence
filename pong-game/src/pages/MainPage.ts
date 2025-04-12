@@ -1,156 +1,46 @@
-import { GameCanvas, GameMode } from '../components/GameCanvas'
-import { renderNavbar } from '../components/Navbar'
-import { currentMode, setMode } from '../State/gameState'
+import { renderNavbar, bindNavbarEvents } from '../components/Navbar'
 import { initStars } from '../components/initStars'
+import { t } from '../State/i18n'
+
+// 模拟当前用户数据（登录后你可以用真实用户替换）
+const currentUser = {
+  username: 'AliceTheChampion',
+  avatar: 'https://i.pravatar.cc/100?u=alice'
+}
 
 export function render() {
-  console.log('[MainPage] render called')
-
-  const tournamentScores: Record<string, number> = {}
-  let playerLeft = 'Player A'
-  let playerRight = 'Player B'
-
   document.body.innerHTML = `
-    <div class="relative z-0 min-h-screen bg-gradient-to-b from-[#1e1e2f] to-[#10101a] px-6 pt-6 font-sans">
+    <div class="relative z-0 min-h-screen bg-gradient-to-b from-[#0f172a] to-[#0a0a1a] text-white font-press px-6 pt-6">
       <canvas id="smoke-bg" class="fixed inset-0 w-full h-full -z-10 pointer-events-none"></canvas>
-      
+
+      <!-- 顶部导航 -->
       ${renderNavbar()}
-  
-      <!-- 模式标题 -->
-      <div id="modeTitle" class="text-center text-xl md:text-2xl text-blue-200 font-press tracking-widest mb-4">
-        🎮 Mode: ${formatMode(currentMode)}
-      </div>
 
-      <!-- 比分显示 -->
-      <div class="text-center text-2xl font-bold text-blue-200 font-press tracking-widest mb-4">
-        <span id="leftScore">0</span> : <span id="rightScore">0</span>
-        <div id="winner" class="mt-2 text-yellow-600 text-sm font-press"></div>
-      </div>
+      <!-- 欢迎区 -->
+      <section class="max-w-4xl mx-auto mt-12 text-center">
+        <img src="${currentUser.avatar}" alt="avatar" class="mx-auto w-24 h-24 rounded-full shadow-lg border-4 border-blue-400 mb-4">
+        <h1 class="text-3xl md:text-4xl font-bold mb-2 text-blue-200">👋 ${t('main.welcome')}, <span class="text-pink-400">${currentUser.username}</span></h1>
+        <p class="text-white/60 text-base md:text-lg">${t('main.description')}</p>
+      </section>
 
-      <!-- 游戏区域 -->
-      <div class="flex justify-center gap-6">
-        <!-- 左侧排行榜 -->
-		<div id="tournamentPanel" class="hidden w-64 h-[500px] overflow-y-auto bg-white/5 border border-blue-500/30 backdrop-blur-md rounded-2xl shadow-2xl p-5">
-		<h2 class="text-xl font-bold mb-4 text-center text-blue-300 tracking-widest">🏆 Tournament Rank</h2>
-		<ul id="rankList" class="space-y-3 text-sm font-mono">
-			<!-- JS 插入内容 -->
-		</ul>
-		</div>
-
-
-        <!-- Canvas -->
-        <canvas id="gameCanvas" width="800" height="500" class="bg-black shadow-2xl rounded-lg"></canvas>
-      </div>
-
-      <!-- 开始按钮 -->
-      <div class="text-center mt-6">
-        <button id="startBtn" class="glow-pulse px-8 py-3 text-sm text-blue-200 font-press tracking-widest border border-blue-400 rounded-full bg-black/30 backdrop-blur-sm transition duration-300">
-          ✨ Start Game
+      <!-- 功能入口 -->
+      <section class="flex flex-col md:flex-row justify-center gap-6 mt-12 text-center">
+        <button onclick="location.hash='#/local'" class="w-full md:w-60 px-6 py-4 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 hover:opacity-90 transition shadow-lg text-lg font-bold">
+          🎮 ${t('main.playLocal')}
         </button>
-      </div>
+        <button onclick="location.hash='#/tournament_setup'" class="w-full md:w-60 px-6 py-4 rounded-xl bg-gradient-to-r from-pink-500 to-orange-500 hover:opacity-90 transition shadow-lg text-lg font-bold">
+          🏆 ${t('main.playTournament')}
+        </button>
+      </section>
+
+      <!-- 最近记录 / 公告（可选） -->
+      <section class="max-w-3xl mx-auto mt-16 text-sm text-white/70 text-center">
+        <h2 class="text-xl font-semibold mb-2">${t('main.recent')}</h2>
+        <p>✨ ${t('main.tip')}</p>
+      </section>
     </div>
   `
 
-  // Handle game mode dropdown
-  const dropdownBtn = document.getElementById('modeDropdownBtn')!
-  const dropdownMenu = document.getElementById('modeDropdownMenu')!
-
-  dropdownBtn.addEventListener('click', (e) => {
-    e.stopPropagation()
-    dropdownMenu.classList.toggle('hidden')
-  })
-
-  document.addEventListener('click', (e) => {
-    if (!dropdownBtn.contains(e.target as Node) && !dropdownMenu.contains(e.target as Node)) {
-      dropdownMenu.classList.add('hidden')
-    }
-  })
-
-  dropdownMenu.querySelectorAll('[data-mode]').forEach((item) => {
-    item.addEventListener('click', (e) => {
-      const mode = (e.target as HTMLElement).getAttribute('data-mode') as GameMode
-      setMode(mode)
-
-      const isTournament = mode === 'tournament'
-      document.getElementById('tournamentPanel')?.classList.toggle('hidden', !isTournament)
-
-      const modeTitle = document.getElementById('modeTitle')!
-      modeTitle.textContent = `🎮 Mode: ${formatMode(mode)}`
-
-      dropdownMenu.classList.add('hidden')
-      dropdownBtn.innerText = `Mode: ${(e.target as HTMLElement).innerText} ⌄`
-    })
-  })
-
-  // Game logic
-  const startBtn = document.getElementById('startBtn') as HTMLButtonElement
-  let game: GameCanvas
-
-  startBtn.addEventListener('click', () => {
-    if (!game) {
-      game = new GameCanvas('gameCanvas', (winner) => {
-        const winnerName = winner === 'left' ? playerLeft : playerRight
-        tournamentScores[winnerName] = (tournamentScores[winnerName] || 0) + 1
-        updateRankPanel()
-      })
-    }
-    game.start()
-  })
-
-  function updateRankPanel() {
-	const rankList = document.getElementById('rankList')!
-	const entries = Object.entries(tournamentScores).sort((a, b) => b[1] - a[1])
-  
-	rankList.innerHTML = entries.map(([name, score], index) => {
-	  const colors = ['text-yellow-400', 'text-gray-300', 'text-orange-300']
-	  const icons = ['🥇', '🥈', '🥉']
-	  const icon = icons[index] || '🎮'
-	  const color = colors[index] || 'text-white/80'
-  
-	  return `
-		<li class="flex justify-between items-center ${color}">
-		  <span class="flex items-center gap-1">
-			${icon}
-			${name}
-		  </span>
-		  <span>${score} pts</span>
-		</li>
-	  `
-	}).join('')
-  }
-  
-
-  // Avatar menu
-  const avatarBtn = document.getElementById('avatarBtn')
-  const avatarMenu = document.getElementById('avatarMenu')
-
-  if (avatarBtn && avatarMenu) {
-    avatarBtn.addEventListener('click', (e) => {
-      e.stopPropagation()
-      avatarMenu.classList.toggle('hidden')
-    })
-
-    document.addEventListener('click', (e) => {
-      if (!avatarBtn.contains(e.target as Node) && !avatarMenu.contains(e.target as Node)) {
-        avatarMenu.classList.add('hidden')
-      }
-    })
-
-    avatarMenu.querySelectorAll('[data-tab]').forEach(item => {
-      item.addEventListener('click', (e) => {
-        const tab = (e.target as HTMLElement).getAttribute('data-tab')
-        if (tab) location.hash = `#/${tab}`
-      })
-    })
-  }
-
-  requestAnimationFrame(() => {
-    setTimeout(() => {
-      initStars()
-    }, 0)
-  })
-}
-
-function formatMode(mode: GameMode): string {
-  return mode === 'local' ? 'Double Local' : 'Tournament'
+  bindNavbarEvents()
+  requestAnimationFrame(() => setTimeout(() => initStars(), 0))
 }
