@@ -36,7 +36,7 @@ function renderUI() {
           <h1 class="text-4xl font-bold text-center drop-shadow-xl">${t('friends.title')}</h1>
         </div>
         <div class="flex flex-col sm:flex-row items-center gap-4 justify-between mb-6">
-          <input id="searchInput" name="searchInput" type="text" placeholder="Search..." class="w-full sm:w-1/2 px-4 py-2 rounded-md bg-[#2a2a3d] border border-gray-600 text-white focus:outline-none placeholder:text-gray-400">
+          <input id="searchInput" name="searchInput" type="text" placeholder="Search name..." class="w-full sm:w-1/2 px-4 py-2 rounded-md bg-[#2a2a3d] border border-gray-600 text-white focus:outline-none placeholder:text-gray-400">
           <button id="addFriendBtn" name="addFriendBtn" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-md flex items-center">
             <span class="mr-2">+</span> Add
           </button>
@@ -127,10 +127,10 @@ function bindFriendEvents(currentUserId: number) {
     }
 
     try {
-      const res = await fetch('http://localhost:3000/friends', {
+      const res = await fetch('http://localhost:3000/users/friends', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: currentUserId, friendDisplayName: name })
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('authToken')}` },
+        body: JSON.stringify({ displayName: name })
       })
 
       const responseData = await res.json()
@@ -157,10 +157,9 @@ function bindDeleteEvents(currentUserId: number) {
       e.stopPropagation()
       const friendId = Number(btn.getAttribute('data-id'))
       try {
-        const res = await fetch('http://localhost:3000/friends', {
+        const res = await fetch(`http://localhost:3000/users/friends/${friendId}`, {
           method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: currentUserId, friendId })
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` },
         })
 
         const responseData = await res.json()
@@ -181,7 +180,10 @@ function bindDeleteEvents(currentUserId: number) {
 
 async function fetchFriends(userId: number) {
   try {
-    const res = await fetch(`http://localhost:3000/friends/${userId}`)
+    const res = await fetch(`http://localhost:3000/users/${userId}/friends`, {
+      method: "GET",
+      headers: {'Authorization': `Bearer ${localStorage.getItem('authToken')}`}
+    })
     friends = await res.json()
 
     const list = document.getElementById('friendList')

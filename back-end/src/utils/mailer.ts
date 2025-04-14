@@ -1,13 +1,12 @@
-// src/utils/mailer.ts
 import nodemailer from 'nodemailer'
 
 const transporter = nodemailer.createTransport({
-	service: 'gmail',
-	auth: {
-	  user: process.env.MAIL_USER,
-	  pass: process.env.MAIL_PASS,
-	},
-  })  
+  service: 'gmail',
+  auth: {
+    user: process.env.MAIL_USER,
+    pass: process.env.MAIL_PASS,
+  },
+})
 
 export async function send2FACodeEmail(to: string, code: string) {
   const info = await transporter.sendMail({

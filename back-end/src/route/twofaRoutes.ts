@@ -1,16 +1,12 @@
-// src/auth/twofaRoutes.ts
-
-import { FastifyInstance } from 'fastify'
-import { PrismaClient } from '@prisma/client'
-import { signToken } from './jwt'
-
-const prisma = new PrismaClient()
+import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import { VerifyTwoFADto, VerifyTwoFASchema } from '../types/twofa.dto';
+import { signToken } from '../utils/jwt';
 
 export async function twofaRoutes(fastify: FastifyInstance) {
-  fastify.post('/auth/2fa/verify', async (req, reply) => {
-    const { userId, code } = req.body as { userId: number; code: string }
+  fastify.post('/auth/2fa/verify', {schema: {body: VerifyTwoFASchema}}, async (request: FastifyRequest<{Body: VerifyTwoFADto}> , reply: FastifyReply) => {
+    const { userId, code } = request.body
 
-    const user = await prisma.user.findUnique({ where: { id: userId } })
+    const user = await fastify.prisma.user.findUnique({ where: { id: userId } })
     if (!user || !user.twoFACode || !user.twoFAExpires) {
       return reply.status(400).send({ message: '2FA not initialized.' })
     }
@@ -21,13 +17,12 @@ export async function twofaRoutes(fastify: FastifyInstance) {
     }
 
     // 清除验证码
-    await prisma.user.update({
+    await fastify.prisma.user.update({
       where: { id: userId },
       data: { twoFACode: null, twoFAExpires: null },
     })
 
-    // 登录成功后签发 JWT，标记 is2FA: true
-    const token = signToken({ id: user.id, email: user.email, is2FA: true })
+    const token = signToken({ id: user.id, email: user.email })
 
     reply.send({
       token,
