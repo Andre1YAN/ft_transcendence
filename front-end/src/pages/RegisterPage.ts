@@ -31,7 +31,7 @@ export function render() {
         </div>
 
         <!-- 表单 -->
-        <form class="space-y-4">
+        <form id="registerForm" class="space-y-4">
           <input
             type="email"
             placeholder="${t('signup.emailPlaceholder')}"
@@ -42,6 +42,13 @@ export function render() {
             placeholder="${t('signup.passwordPlaceholder')}"
             class="w-full bg-transparent border border-white/20 rounded-md px-4 py-2 sm:py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-orange-400 transition placeholder:text-white/40 text-white"
           />
+
+		  <input
+			type="file"
+			id="avatarInput"
+			accept="image/*"
+			class="w-full bg-transparent border border-white/20 rounded-md px-4 py-2 sm:py-2.5 text-white text-sm"
+		  />
 
           <button
             type="submit"
@@ -62,4 +69,54 @@ export function render() {
 
   bindLanguageSwitcher()
   requestAnimationFrame(() => initStars())
+
+  document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
+	e.preventDefault()
+  
+	const inputs = document.querySelectorAll<HTMLInputElement>('form input')
+	const email = inputs[0].value.trim()
+	const password = inputs[1].value.trim()
+	const avatarFile = (document.getElementById('avatarInput') as HTMLInputElement)?.files?.[0]
+  
+	if (!email || !password) {
+	  alert('Email and password are required!')
+	  return
+	}
+  
+	let avatarBase64: string | undefined
+	if (avatarFile) {
+	  avatarBase64 = await toBase64(avatarFile)
+	}
+  
+	try {
+	  const res = await fetch('http://localhost:3000/auth/register', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({
+		  email,
+		  password,
+		  displayName: email.split('@')[0],
+		  avatarBase64 // optional
+		})
+	  })
+  
+	  const data = await res.json()
+	  if (!res.ok) throw new Error(data.message || 'Registration failed.')
+  
+	  alert(`Welcome, ${data.displayName}!`)
+	  location.hash = '#/login'
+	} catch (err: any) {
+	  alert(err.message || 'Something went wrong.')
+	}
+  })
+  
+  // 将图片转为 base64
+  function toBase64(file: File): Promise<string> {
+	return new Promise((resolve, reject) => {
+	  const reader = new FileReader()
+	  reader.readAsDataURL(file)
+	  reader.onload = () => resolve(reader.result as string)
+	  reader.onerror = reject
+	})
+  }
 }

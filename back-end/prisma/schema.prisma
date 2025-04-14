@@ -1,0 +1,89 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum MatchType {
+  NORMAL
+  TOURNAMENT
+}
+
+model Match {
+  id        Int       @id @default(autoincrement())
+  user1     User      @relation("User1", fields: [user1Id], references: [id])
+  user1Id   Int
+  user2     User      @relation("User2", fields: [user2Id], references: [id])
+  user2Id   Int
+  score1    Int
+  score2    Int
+  playedAt  DateTime  @default(now())
+  matchType MatchType @default(NORMAL)
+}
+
+model User {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  displayName String   @unique
+  password    String
+  avatarUrl   String?  @default("https://api.dicebear.com/7.x/pixel-art/svg?seed=default")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  matchesAsUser1 Match[] @relation("User1")
+  matchesAsUser2 Match[] @relation("User2")
+
+  matchType MatchType @default(NORMAL)
+
+  friends      Friend[] @relation("UserFriends")
+  friendOf     Friend[] @relation("FriendOf")
+}
+
+model Friend {
+  id        Int    @id @default(autoincrement())
+  user      User   @relation("UserFriends", fields: [userId], references: [id])
+  userId    Int
+  friend    User   @relation("FriendOf", fields: [friendId], references: [id])
+  friendId  Int
+  createdAt DateTime @default(now())
+
+  @@unique([userId, friendId])
+  @@index([userId])
+  @@index([friendId])
+}
+
+model Tournament {
+  id        Int       @id @default(autoincrement())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  players   TournamentPlayer[]
+  matches   TournamentMatch[]
+}
+
+model TournamentMatch {
+  id            Int      @id @default(autoincrement())
+  tournament    Tournament @relation(fields: [tournamentId], references: [id])
+  tournamentId  Int
+
+  player1Alias  String
+  player2Alias  String
+  winnerAlias   String
+  score1        Int
+  score2        Int
+
+  playedAt      DateTime @default(now())
+}
+
+model TournamentPlayer {
+  id    Int    @id @default(autoincrement())
+  alias String
+  score Int    @default(0)
+
+  tournament   Tournament @relation(fields: [tournamentId], references: [id])
+  tournamentId Int
+}

@@ -5,6 +5,9 @@ import { t } from '../State/i18n'
 
 export function render() {
   let game: GameCanvas | null = null
+  const user = JSON.parse(localStorage.getItem('user') || 'null')
+  const playerAlias = user?.displayName || 'You'
+  const aiAlias = 'AI'
 
   document.body.innerHTML = `
     <div class="relative z-0 min-h-screen bg-gradient-to-b from-[#1e1e2f] to-[#10101a] px-6 pt-6 font-sans">
@@ -15,8 +18,12 @@ export function render() {
         🎮 ${t('local.title')}
       </div>
 
-      <div class="text-center text-2xl font-bold text-blue-200 font-press tracking-widest mb-4">
-        <span id="leftScore">0</span> : <span id="rightScore">0</span>
+      <div class="flex justify-center items-center gap-4 text-2xl font-bold text-blue-200 font-press tracking-widest mb-4">
+        <img src="${user?.avatarUrl || 'https://i.pravatar.cc/40?u=guest'}" class="w-10 h-10 rounded-full" alt="player" />
+        <span id="leftScore">0</span>
+        <span class="mx-2">:</span>
+        <span id="rightScore">0</span>
+        <img src="https://i.pravatar.cc/40?u=ai" class="w-10 h-10 rounded-full" alt="guest" />
         <div id="winner" class="mt-2 text-yellow-600 text-sm font-press"></div>
       </div>
 
@@ -39,17 +46,48 @@ export function render() {
 
   const startBtn = document.getElementById('startBtn') as HTMLButtonElement
   const winnerEl = document.getElementById('winner')!
-
   const isMobile = window.innerWidth < 768
   const scale = isMobile ? 1.15 : 1
 
-  game = new GameCanvas('gameCanvas', (winner) => {
-    winnerEl.textContent = winner === 'left' ? t('local.leftWin') : t('local.rightWin')
-  }, scale)
+  // ✅ 初始化 GameCanvas，传入玩家别名
+  game = new GameCanvas(
+	'gameCanvas',
+	async ({ winnerAlias, leftScore, rightScore }) => {
+	  winnerEl.textContent = `${winnerAlias} ${t('main.wins')}`
+  
+	  try {
+		const res = await fetch('http://localhost:3000/match/report', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+			  user1Id: user?.id ?? 1,
+			  user2Id: 999,
+			  score1: leftScore,
+			  score2: rightScore
+			})
+		  })
+		  
+		  if (!res.ok) {
+			const error = await res.json()
+			console.error('❌ Failed to save match:', error)
+		  } else {
+			console.log('✅ Match saved!')
+		  }		  
+	  } catch (err) {
+		console.error('❌ Failed to save match:', err)
+	  }
+	},
+	scale,
+	{
+	  leftAlias: playerAlias,
+	  rightAlias: aiAlias
+	}  
+  )
 
   startBtn.addEventListener('click', () => {
     winnerEl.textContent = ''
-    game!.start(true)
+    game!.resetScore()
+    game!.start()
   })
 
   requestAnimationFrame(() => setTimeout(() => initStars(), 0))

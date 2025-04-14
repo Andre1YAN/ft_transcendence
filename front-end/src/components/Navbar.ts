@@ -4,6 +4,9 @@ import { t, getCurrentLanguage, setLanguage } from '../State/i18n'
 // 🔽 这里是要补的 renderNavbar 函数
 export function renderNavbar() {
   const currentLang = getCurrentLanguage()
+  const user = JSON.parse(localStorage.getItem('user') || 'null')
+  const avatarUrl = user?.avatarUrl || 'https://i.pravatar.cc/40?u=default'
+
 
   return `
     <div class="flex justify-between items-center mb-10">
@@ -32,8 +35,8 @@ export function renderNavbar() {
         </select>
 
         <div class="relative">
-          <button id="avatarBtn" class="w-10 h-10 rounded-full overflow-hidden border-2 border-white hover:ring-2 hover:ring-pink-400 transition">
-            <img src="https://i.pravatar.cc/40?u=user" alt="Avatar" class="w-full h-full object-cover" />
+		  <button id="avatarBtn" class="w-10 h-10 rounded-full overflow-hidden border-2 border-white hover:ring-2 hover:ring-pink-400 transition">
+			<img src="${avatarUrl}" alt="Avatar" class="w-full h-full object-cover" />
           </button>
           <div id="avatarMenu" class="hidden absolute right-0 mt-2 w-48 bg-[#1b1b2f] border border-purple-500/30 rounded-xl shadow-lg z-50">
             <button class="w-full text-left px-4 py-2 text-white hover:bg-purple-500/20 transition rounded-t-xl" data-tab="profile">👤 ${t('navbar.profile')}</button>

@@ -62,4 +62,41 @@ export function render() {
 
   bindLanguageSwitcher()
   requestAnimationFrame(() => initStars())
+
+  document.querySelector('form')?.addEventListener('submit', async (e) => {
+    e.preventDefault()
+
+    const inputs = document.querySelectorAll<HTMLInputElement>('form input')
+    const email = inputs[0].value.trim()
+    const password = inputs[1].value.trim()
+
+    if (!email || !password) {
+      alert('Email and password are required!')
+      return
+    }
+
+    try {
+      const res = await fetch('http://localhost:3000/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Login failed.')
+      }
+
+      // 🔐 成功登录后可以把 user 存到 localStorage，或使用状态管理
+      localStorage.setItem('user', JSON.stringify(data))
+      alert(`Welcome back, ${data.displayName}!`)
+
+      // 跳转到主页面或 profile 页面
+      location.hash = '#/main'
+    } catch (err: any) {
+      alert(err.message || 'Something went wrong.')
+    }
+  })
+
 }

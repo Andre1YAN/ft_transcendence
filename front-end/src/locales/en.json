@@ -46,7 +46,9 @@
 		"playTournament": "Tournament",
 		"recent": "Recent Activity",
 		"tip": "Check your history or challenge your friends!",
-		"tournamentMode": "Tournament Mode"
+		"tournamentMode": "Tournament Mode",
+		"tournamentPlayers": "Participants",  
+		"currentMatch": "Current Match"  
 	},
 	"local": {
 		"title": "Double Local Mode",
@@ -63,7 +65,10 @@
 		"historyTitle": "Match History",
 		"matchDate": "2024-04-11",
 		"matchResult": "WIN",
-		"back": "← Back to Game"
+		"back": "← Back to Game",
+		"profile.loading": "Loading match history...",
+		"profile.noMatches": "No matches played yet.",
+		"profile.errorFetching": "Failed to load match history."
 	  },
 	"history": {
 		"title": "📜 Match History",
@@ -89,6 +94,9 @@
 	"player": "Player",
 	"modeTitle": "Tournament Mode",
 	"rank": "Tournament Rank",
-	"duplicateWarning": "Player names must be unique."
+	"duplicateWarning": "Player names must be unique.",
+	"playersTitle": "Participants",         
+	"matchStart": "Start Match",           
+	"tournamentEnd": "🏁 Tournament Finished!" 
 	}
   }

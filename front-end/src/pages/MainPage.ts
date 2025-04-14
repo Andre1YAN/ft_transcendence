@@ -2,13 +2,11 @@ import { renderNavbar, bindNavbarEvents } from '../components/Navbar'
 import { initStars } from '../components/initStars'
 import { t } from '../State/i18n'
 
-// 模拟当前用户数据（登录后你可以用真实用户替换）
-const currentUser = {
-  username: 'AliceTheChampion',
-  avatar: 'https://i.pravatar.cc/100?u=alice'
-}
-
 export function render() {
+	const user = JSON.parse(localStorage.getItem('user') || '{}')
+	const avatarUrl = user.avatarUrl || 'https://api.dicebear.com/7.x/pixel-art/svg?seed=default'
+	const displayName = user.displayName || 'Guest'
+
   document.body.innerHTML = `
     <div class="relative z-0 min-h-screen bg-gradient-to-b from-[#0f172a] to-[#0a0a1a] text-white font-press px-4 sm:px-6 pt-6">
 
@@ -20,15 +18,8 @@ export function render() {
 
       <!-- 欢迎区域 -->
       <section class="max-w-4xl mx-auto mt-10 sm:mt-14 text-center px-4">
-        <img 
-          src="${currentUser.avatar}" 
-          alt="avatar" 
-          class="mx-auto w-20 h-20 sm:w-24 sm:h-24 rounded-full shadow-lg border-4 border-blue-400 mb-4 transition-transform hover:scale-105"
-        />
-        <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold mb-2 text-blue-200">
-          👋 ${t('main.welcome')}, 
-          <span class="text-pink-400">${currentUser.username}</span>
-        </h1>
+		<img src="${avatarUrl}" class="w-24 h-24 mx-auto rounded-full shadow-lg mb-2" />
+		<h1 class="text-2xl font-bold">${t('main.welcome')}, ${displayName}!</h1>
         <p class="text-white/60 text-sm sm:text-base md:text-lg">
           ${t('main.description')}
         </p>

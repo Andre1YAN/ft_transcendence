@@ -56,43 +56,72 @@ function renderPlayerInputs() {
 }
 
 function bindEvents() {
-  document.getElementById('addPlayer')?.addEventListener('click', () => {
-    playerList.push(`${t('tournament.player')} ${playerList.length + 1}`)
-    rerenderInputs()
-  })
+	document.getElementById('addPlayer')?.addEventListener('click', () => {
+	  playerList.push(`${t('tournament.player')} ${playerList.length + 1}`)
+	  rerenderInputs()
+	})
+  
+	document.getElementById('startTournament')?.addEventListener('click', async () => {
+	  const inputs = document.querySelectorAll<HTMLInputElement>('.player-name-input')
+	  const names = Array.from(inputs)
+		.map(input => input.value.trim())
+		.filter(name => name.length > 0)
+  
+	  const hasDuplicate = names.length !== new Set(names).size
+  
+	  if (names.length < 2) {
+		alert(t('tournament.needTwoPlayers'))
+		return
+	  }
+  
+	  if (hasDuplicate) {
+		alert(t('tournament.duplicateWarning') || 'Players must have unique names.')
+		return
+	  }
+  
+	  try {
+		const res = await fetch('http://localhost:3000/tournament/create', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ aliases: names })
+		  })
+  
+		if (!res.ok) {
+		  throw new Error('Server error')
+		}
+  
+		const data = await res.json()
+  
+		// ⏺️ 保存 tournamentId 和 alias 信息
+		sessionStorage.setItem('tournamentId', data.id)
+		sessionStorage.setItem('tournamentPlayers', JSON.stringify(names))
+  
+		// ✅ 页面跳转
+		location.hash = '#/tournament'
+	  } catch (err) {
+		console.error('创建比赛失败:', err)
+		alert(t('tournament.createFailed') || '创建比赛失败，请重试')
+	  }
+	})
+  }
+  
 
-  document.getElementById('startTournament')?.addEventListener('click', () => {
-    const inputs = document.querySelectorAll<HTMLInputElement>('.player-name-input')
-    const names = Array.from(inputs)
-      .map(input => input.value.trim())
-      .filter(name => name.length > 0)
-
-    const hasDuplicate = names.length !== new Set(names).size
-
-    if (names.length < 2) {
-      alert(t('tournament.needTwoPlayers'))
-      return
-    }
-
-    if (hasDuplicate) {
-      alert(t('tournament.duplicateWarning') || 'Players must have unique names.')
-      return
-    }
-
-    sessionStorage.setItem('tournamentPlayers', JSON.stringify(names))
-    location.hash = '#/tournament'
-  })
-}
-
-function rerenderInputs() {
-  const container = document.getElementById('playerList')!
-  container.innerHTML = renderPlayerInputs()
-
-  document.querySelectorAll('.remove-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const index = Number((btn as HTMLElement).getAttribute('data-index'))
-      playerList.splice(index, 1)
-      rerenderInputs()
-    })
-  })
-}
+  function rerenderInputs() {
+	// 🔁 更新 playerList 中的值
+	const inputs = document.querySelectorAll<HTMLInputElement>('.player-name-input')
+	inputs.forEach((input, index) => {
+	  playerList[index] = input.value.trim()
+	})
+  
+	const container = document.getElementById('playerList')!
+	container.innerHTML = renderPlayerInputs()
+  
+	document.querySelectorAll('.remove-btn').forEach(btn => {
+	  btn.addEventListener('click', () => {
+		const index = Number((btn as HTMLElement).getAttribute('data-index'))
+		playerList.splice(index, 1)
+		rerenderInputs()
+	  })
+	})
+  }
+  
