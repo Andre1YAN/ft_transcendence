@@ -1,23 +1,22 @@
 // src/auth/googleSignIn.ts
 export function initializeGoogleSignIn() {
-	// 注意替换成你在 Google Cloud Console 获得的 Client ID
 	const clientID = '734621834535-529ck0a42jemmd051hbkhkara8nop328.apps.googleusercontent.com';
-  
-	// 初始化 Google 账户 API
+
 	window.google.accounts.id.initialize({
-	  client_id: clientID,
-	  callback: handleCredentialResponse,
+		client_id: clientID,
+		callback: handleCredentialResponse,
+		use_fedcm_for_prompt: false
 	});
-  
-	// 在指定的容器中渲染 Google 登录按钮
+
 	window.google.accounts.id.renderButton(
-	  document.getElementById('g_id_signin')!,
-	  { theme: 'outline', size: 'large' } // 可根据需求调整样式
+		document.getElementById('g_id_signin')!,
+		{ theme: 'outline', size: 'large' }
 	);
-  
-	// 也可以调用 prompt() 让系统显示 One Tap
+
+	// ❌ 删除这行就不会触发 One Tap 弹窗了
 	// window.google.accounts.id.prompt();
-  }
+}
+
   
   // 当用户成功登录后，Google 会调用该回调，传回一个包含 ID token 的对象
   function handleCredentialResponse(response: { credential: string }) {

@@ -83,7 +83,12 @@ export function render() {
         body: JSON.stringify({ email, password })
       })
 
-      const data = await res.json()
+      if (!res.ok) {
+		const errorText = await res.text();
+		throw new Error(errorText || 'Login failed');
+	  }
+	  
+	  const data = await res.json()	  
 
       if (!res.ok) {
         throw new Error(data.message || 'Login failed.')
