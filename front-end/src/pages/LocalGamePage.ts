@@ -59,11 +59,11 @@ export function render() {
 	  winnerEl.textContent = `${winnerAlias} ${t('main.wins')}`
   
 	  try {
-		const res = await fetch('http://localhost:3000/match/report', {
+		const res = await fetch('http://localhost:3000/users/matches', {
 			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
+			headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('authToken')}`},
 			body: JSON.stringify({
-			  user1Id: user?.id ?? 1,
+			  user1Id: user?.id ?? 1, //为什么默认default值为1？？
 			  user2Id: 999,
 			  score1: leftScore,
 			  score2: rightScore

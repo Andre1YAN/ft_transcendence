@@ -56,7 +56,10 @@ function setupPresenceSocket(userId: number) {
 // 定义 fetchFriends，用于获取好友列表
 async function fetchFriends(userId: number) {
   try {
-    const res = await fetch(`http://localhost:3000/friends/${userId}`)
+    const res = await fetch(`http://localhost:3000/users/${userId}/friends`, {
+      method: 'GET',
+      headers: {'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+    }})
     const data = await res.json()
     console.log("Fetched friends:", data)
     // 将获取到的好友列表挂到全局变量 window.friends 中

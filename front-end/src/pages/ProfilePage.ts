@@ -82,7 +82,10 @@ export function render() {
   requestAnimationFrame(() => initStars())
 
   // 🎯 拉取用户比赛记录
-fetch(`http://localhost:3000/match/user/history/${user.id}`)
+fetch(`http://localhost:3000/users/${user.id}/matches`, {
+  method: "GET",
+  headers: {'Authorization': `Bearer ${localStorage.getItem('authToken')}`}
+})
 .then(res => res.json())
 .then((matches) => {
   const container = document.getElementById('matchHistory')!
@@ -98,11 +101,11 @@ fetch(`http://localhost:3000/match/user/history/${user.id}`)
 
   // ✅ 渲染每条比赛
   container.innerHTML = matches.map((match: any) => {
-	const isWin = match.user1Id === user.id
+	const isWin = match.user1.id === user.id
 	  ? match.score1 > match.score2
 	  : match.score2 > match.score1
 
-	const opponent = match.user1Id === user.id ? match.user2 : match.user1
+	const opponent = match.user1.id === user.id ? match.user2 : match.user1
 
 	return `
 	  <div class="flex justify-between items-center border-b border-white/10 pb-2">
@@ -137,16 +140,16 @@ fetch(`http://localhost:3000/match/user/history/${user.id}`)
 	  return
 	}
   
-	let avatarBase64: string | undefined
+	let avatarBase64 = avatarUrl
 	if (file) {
 	  avatarBase64 = await toBase64(file)
 	}
   
 	try {
-	  const res = await fetch('http://localhost:3000/auth/update-profile', {
+	  const res = await fetch('http://localhost:3000/users/profile', {
 		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
-		body: JSON.stringify({ id: user.id, displayName, avatarBase64 })
+		headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('authToken')}`},
+		body: JSON.stringify({displayName, avatarBase64})
 	  })
   
 	  const data = await res.json()

@@ -66,7 +66,10 @@ export function render() {
     }
 
     try {
-      const res = await fetch(`http://localhost:3000/match/user/history/${user.id}`)
+      const res = await fetch(`http://localhost:3000/users/${user.id}/matches`, {
+        headers: {'Authorization': `Bearer ${localStorage.getItem('authToken')}`}
+      }
+      )
       const matches = await res.json()
 
       const historyContainer = document.getElementById('matchList')
@@ -95,7 +98,7 @@ export function render() {
 
       for (let i = 0; i < matches.length; i++) {
         const m = matches[i]
-        const isUser1 = m.user1Id === user.id
+        const isUser1 = m.user1.id === user.id
         const yourScore = isUser1 ? m.score1 : m.score2
         const oppScore = isUser1 ? m.score2 : m.score1
 

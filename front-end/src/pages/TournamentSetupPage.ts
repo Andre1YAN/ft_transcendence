@@ -80,7 +80,7 @@ function bindEvents() {
 	  }
   
 	  try {
-		const res = await fetch('http://localhost:3000/tournament/create', {
+		const res = await fetch('http://localhost:3000/tournaments', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ aliases: names })

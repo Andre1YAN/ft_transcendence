@@ -81,7 +81,7 @@ export function render() {
 
   async function initTournament(tournamentId: string) {
 	try {
-	  const res = await fetch(`http://localhost:3000/tournament/${tournamentId}/matches`)
+	  const res = await fetch(`http://localhost:3000/tournaments/${tournamentId}/matches`)
 	  const playedMatches: { player1Alias: string, player2Alias: string }[] = await res.json()
   
 	  const hasBeenPlayed = (a: string, b: string) =>
@@ -107,7 +107,7 @@ export function render() {
 		  document.getElementById('winner')!.textContent = `${winnerAlias} ${t('main.wins')}`
   
 		  try {
-			await fetch(`http://localhost:3000/tournament/${tournamentId}/match`, {
+			await fetch(`http://localhost:3000/tournaments/${tournamentId}/matches`, {
 			  method: 'POST',
 			  headers: { 'Content-Type': 'application/json' },
 			  body: JSON.stringify({
@@ -180,7 +180,7 @@ function updateMatchDisplay() {
 
 async function fetchAndUpdateRank(tournamentId: string) {
   try {
-    const res = await fetch(`http://localhost:3000/tournament/${tournamentId}/players`)
+    const res = await fetch(`http://localhost:3000/tournaments/${tournamentId}/players`)
     if (!res.ok) throw new Error('Fetch failed')
 
     const players: { alias: string, score: number }[] = await res.json()

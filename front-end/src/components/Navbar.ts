@@ -124,6 +124,7 @@ export function bindNavbarEvents() {
               window.socket.close()  // 触发后端的关闭逻辑，从 onlineUsers 中删除
             }
             localStorage.removeItem('user')
+            localStorage.removeItem('authToken')
             location.hash = '#/login'
           } else {
             location.hash = `#/${tab}`
