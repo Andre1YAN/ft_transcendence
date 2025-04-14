@@ -41,6 +41,10 @@ model User {
 
   friends      Friend[] @relation("UserFriends")
   friendOf     Friend[] @relation("FriendOf")
+
+  is2FAEnabled Boolean  @default(false)
+  twoFACode    String?  // 当前验证码（哈希后保存）
+  twoFAExpires DateTime?
 }
 
 model Friend {

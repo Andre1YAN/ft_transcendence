@@ -65,41 +65,45 @@ export function render() {
   initializeGoogleSignIn()
 
   document.querySelector('form')?.addEventListener('submit', async (e) => {
-    e.preventDefault()
-
-    const inputs = document.querySelectorAll<HTMLInputElement>('form input')
-    const email = inputs[0].value.trim()
-    const password = inputs[1].value.trim()
-
-    if (!email || !password) {
-      alert('Email and password are required!')
-      return
-    }
-
-    try {
-      const res = await fetch('http://localhost:3000/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      })
-
-      if (!res.ok) {
-		const errorText = await res.text();
-		throw new Error(errorText || 'Login failed');
+	e.preventDefault()
+  
+	const inputs = document.querySelectorAll<HTMLInputElement>('form input')
+	const email = inputs[0].value.trim()
+	const password = inputs[1].value.trim()
+  
+	if (!email || !password) {
+	  alert('Email and password are required!')
+	  return
+	}
+  
+	try {
+	  const res = await fetch('http://localhost:3000/auth/login', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ email, password })
+	  })
+  
+	  const data = await res.json()
+  
+	  if (!res.ok) {
+		throw new Error(data.message || 'Login failed')
 	  }
-	  
-	  const data = await res.json()	  
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Login failed.')
-      }
-
-      // 登录成功后保存用户信息
-      localStorage.setItem('user', JSON.stringify(data))
-      alert(`Welcome back, ${data.displayName}!`)
-      location.hash = '#/main'
-    } catch (err: any) {
-      alert(err.message || 'Something went wrong.')
-    }
+  
+	  // ✅ 检查是否需要 2FA
+	  if (data.step === '2fa_required') {
+		localStorage.setItem('2fa_userId', data.userId)
+		location.hash = '#/2fa'
+		return
+	  }
+  
+	  // ✅ 否则直接登录成功
+	  localStorage.setItem('user', JSON.stringify(data.user || data)) // 兼容老结构
+	  localStorage.setItem('authToken', data.token)
+	  alert(`Welcome back, ${data.user?.displayName || data.displayName}!`)
+	  location.hash = '#/main'
+  
+	} catch (err: any) {
+	  alert(err.message || 'Something went wrong.')
+	}
   })
-}
+}  

@@ -10,6 +10,7 @@ import { friendRoutes } from './auth/friendRoutes'
 import { googleAuthRoutes } from './auth/googleAuthRoutes'  // 导入 Google 路由模块
 import { setupPresenceSocket } from './ws/presence'
 import 'dotenv/config'
+import { twofaRoutes } from './auth/twofaRoutes'
 
 const prisma = new PrismaClient()
 const fastify = Fastify({
@@ -30,6 +31,7 @@ async function buildServer() {
   await fastify.register(friendRoutes)
   await fastify.register(googleAuthRoutes) // 关键：注册 Google 认证路由
   await setupPresenceSocket(fastify)
+  await fastify.register(twofaRoutes)
 
   return fastify
 }

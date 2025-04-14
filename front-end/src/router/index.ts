@@ -9,7 +9,8 @@ const routes: Record<string, string> = {
 	'/friends': 'FriendsPage',
 	'/local': 'LocalGamePage',
 	'/tournament': 'TournamentPage',
-	'/tournament_setup': 'TournamentSetupPage'
+	'/tournament_setup': 'TournamentSetupPage',
+	'/2fa': 'TwoFA',
   }  
   
   export function initRouter() {

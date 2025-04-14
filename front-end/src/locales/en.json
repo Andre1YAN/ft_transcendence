@@ -32,7 +32,8 @@
 		"tournament": "Tournament",
 		"profile": "Profile",
 		"friends": "Friends",
-		"history": "History"
+		"history": "History",
+		"logout": "Log Out"
 		},
 	"main": {
 		"mode": "Mode",
@@ -66,9 +67,9 @@
 		"matchDate": "2024-04-11",
 		"matchResult": "WIN",
 		"back": "← Back to Game",
-		"profile.loading": "Loading match history...",
-		"profile.noMatches": "No matches played yet.",
-		"profile.errorFetching": "Failed to load match history."
+		"loading": "Loading match history...",
+		"noMatches": "No matches played yet.",
+		"errorFetching": "Failed to load match history."
 	  },
 	"history": {
 		"title": "📜 Match History",

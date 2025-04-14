@@ -1,6 +1,7 @@
 import { initStars } from '../components/initStars'
 import { t } from '../State/i18n'
 import { renderLanguageSwitcher, bindLanguageSwitcher } from '../components/LanguageSwitcher'
+import { initializeGoogleSignIn } from '../auth/googleSignIn'
 
 export function render() {
   document.body.innerHTML = `
@@ -40,7 +41,8 @@ export function render() {
             placeholder="${t('signup.passwordPlaceholder')}"
             class="w-full bg-transparent border border-white/20 rounded-md px-4 py-2 sm:py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-orange-400 transition placeholder:text-white/40 text-white"
           />
-
+		  <input type="checkbox" id="enable2fa" class="accent-orange-500" />
+		  <label for="enable2fa">Enable 2FA (Two-Factor Authentication)</label>
 		  <input
 			type="file"
 			id="avatarInput"
@@ -67,6 +69,7 @@ export function render() {
 
   bindLanguageSwitcher()
   requestAnimationFrame(() => initStars())
+  initializeGoogleSignIn()
 
   document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
 	e.preventDefault()
@@ -75,6 +78,7 @@ export function render() {
 	const email = inputs[0].value.trim()
 	const password = inputs[1].value.trim()
 	const avatarFile = (document.getElementById('avatarInput') as HTMLInputElement)?.files?.[0]
+	const enable2FA = (document.getElementById('enable2fa') as HTMLInputElement)?.checked
   
 	if (!email || !password) {
 	  alert('Email and password are required!')
@@ -94,7 +98,8 @@ export function render() {
 		  email,
 		  password,
 		  displayName: email.split('@')[0],
-		  avatarBase64 // optional
+		  avatarBase64, // optional
+		  is2FAEnabled: enable2FA
 		})
 	  })
   

@@ -7,7 +7,7 @@ export function render() {
   let game: GameCanvas | null = null
   const user = JSON.parse(localStorage.getItem('user') || 'null')
   const playerAlias = user?.displayName || 'You'
-  const aiAlias = 'AI'
+  const guestAlias = 'Guest'
 
   document.body.innerHTML = `
     <div class="relative z-0 min-h-screen bg-gradient-to-b from-[#1e1e2f] to-[#10101a] px-6 pt-6 font-sans">
@@ -18,14 +18,17 @@ export function render() {
         🎮 ${t('local.title')}
       </div>
 
-      <div class="flex justify-center items-center gap-4 text-2xl font-bold text-blue-200 font-press tracking-widest mb-4">
-        <img src="${user?.avatarUrl || 'https://i.pravatar.cc/40?u=guest'}" class="w-10 h-10 rounded-full" alt="player" />
-        <span id="leftScore">0</span>
-        <span class="mx-2">:</span>
-        <span id="rightScore">0</span>
-        <img src="https://i.pravatar.cc/40?u=ai" class="w-10 h-10 rounded-full" alt="guest" />
-        <div id="winner" class="mt-2 text-yellow-600 text-sm font-press"></div>
-      </div>
+	<div class="flex flex-col items-center text-2xl font-bold text-blue-200 font-press tracking-widest mb-4">
+	<div class="flex justify-center items-center gap-4">
+		<img src="${user?.avatarUrl || 'https://i.pravatar.cc/40?u=guest'}" class="w-10 h-10 rounded-full" alt="player" />
+		<span id="leftScore">0</span>
+		<span class="mx-2">:</span>
+		<span id="rightScore">0</span>
+		<img src="https://i.pravatar.cc/40?u=ai" class="w-10 h-10 rounded-full" alt="guest" />
+	</div>
+	<div id="winner" class="mt-2 text-yellow-500 text-base font-press"></div>
+	</div>
+
 
       <div class="flex justify-center">
         <canvas
@@ -80,7 +83,7 @@ export function render() {
 	scale,
 	{
 	  leftAlias: playerAlias,
-	  rightAlias: aiAlias
+	  rightAlias: guestAlias
 	}  
   )
 

@@ -4,6 +4,10 @@ export {}
 
 declare global {
   interface Window {
+    user?: {
+      id: number
+      [key: string]: any // 可选：容纳更多属性
+    }
     friends?: Array<{
       id: number
       name: string
