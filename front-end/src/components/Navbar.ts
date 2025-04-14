@@ -7,12 +7,11 @@ export function renderNavbar() {
   const user = JSON.parse(localStorage.getItem('user') || 'null')
   const avatarUrl = user?.avatarUrl || 'https://i.pravatar.cc/40?u=default'
 
-
   return `
     <div class="flex justify-between items-center mb-10">
       <div id="logo" class="cursor-pointer font-press text-3xl font-bold text-blue-200 tracking-widest">
-  		42 PONG
-	  </div>
+        42 PONG
+      </div>
       <div class="flex items-center space-x-4 font-press text-sm font-medium text-white">
         <div class="relative">
           <button id="modeDropdownBtn" class="px-4 py-2 rounded-lg shadow transition bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90">
@@ -35,13 +34,15 @@ export function renderNavbar() {
         </select>
 
         <div class="relative">
-		  <button id="avatarBtn" class="w-10 h-10 rounded-full overflow-hidden border-2 border-white hover:ring-2 hover:ring-pink-400 transition">
-			<img src="${avatarUrl}" alt="Avatar" class="w-full h-full object-cover" />
+          <button id="avatarBtn" class="w-10 h-10 rounded-full overflow-hidden border-2 border-white hover:ring-2 hover:ring-pink-400 transition">
+            <img src="${avatarUrl}" alt="Avatar" class="w-full h-full object-cover" />
           </button>
           <div id="avatarMenu" class="hidden absolute right-0 mt-2 w-48 bg-[#1b1b2f] border border-purple-500/30 rounded-xl shadow-lg z-50">
             <button class="w-full text-left px-4 py-2 text-white hover:bg-purple-500/20 transition rounded-t-xl" data-tab="profile">👤 ${t('navbar.profile')}</button>
             <button class="w-full text-left px-4 py-2 text-white hover:bg-purple-500/20 transition" data-tab="history">📜 ${t('navbar.history')}</button>
-            <button class="w-full text-left px-4 py-2 text-white hover:bg-purple-500/20 transition rounded-b-xl" data-tab="friends">🤝 ${t('navbar.friends')}</button>
+            <button class="w-full text-left px-4 py-2 text-white hover:bg-purple-500/20 transition" data-tab="friends">🤝 ${t('navbar.friends')}</button>
+            <!-- 添加登出按钮 -->
+            <button class="w-full text-left px-4 py-2 text-white hover:bg-purple-500/20 transition rounded-b-xl" data-tab="logout">🔓 ${t('navbar.logout') || 'Log Out'}</button>
           </div>
         </div>
       </div>
@@ -65,27 +66,27 @@ export function bindNavbarEvents() {
       }
     })
 
-	dropdownMenu.querySelectorAll('[data-mode]').forEach((item) => {
-		item.addEventListener('click', (e) => {
-		  const el = e.target as HTMLElement
-		  const mode = el.getAttribute('data-mode')
-	  
-		  if (!mode) return
-		  setMode(mode as any)
-	  
-		  // ✅ 正确的路由跳转
-		  if (mode === 'tournament') {
-			location.hash = '#/tournament_setup'
-		  } else if (mode === 'local') {
-			location.hash = '#/local'
-		  }
-	  
-		  // 更新 UI 状态
-		  dropdownMenu.classList.add('hidden')
-		  dropdownBtn.innerHTML = `${t('navbar.gameMode')} ⌄`
-		})
-	  })
-	}
+    dropdownMenu.querySelectorAll('[data-mode]').forEach((item) => {
+      item.addEventListener('click', (e) => {
+        const el = e.target as HTMLElement
+        const mode = el.getAttribute('data-mode')
+    
+        if (!mode) return
+        setMode(mode as any)
+    
+        // 正确的路由跳转
+        if (mode === 'tournament') {
+          location.hash = '#/tournament_setup'
+        } else if (mode === 'local') {
+          location.hash = '#/local'
+        }
+    
+        // 更新 UI 状态
+        dropdownMenu.classList.add('hidden')
+        dropdownBtn.innerHTML = `${t('navbar.gameMode')} ⌄`
+      })
+    })
+  }
 
   // Language Selector
   const langSelect = document.getElementById('langSelect') as HTMLSelectElement
@@ -116,16 +117,27 @@ export function bindNavbarEvents() {
     avatarMenu.querySelectorAll('[data-tab]').forEach(item => {
       item.addEventListener('click', (e) => {
         const tab = (e.target as HTMLElement).getAttribute('data-tab')
-        if (tab) location.hash = `#/${tab}`
+        if (tab) {
+          if (tab === 'logout') {
+            // 登出操作：关闭 WebSocket 连接，清空本地登录信息，并跳转到登录页
+            if (window.socket && window.socket.readyState === WebSocket.OPEN) {
+              window.socket.close()  // 触发后端的关闭逻辑，从 onlineUsers 中删除
+            }
+            localStorage.removeItem('user')
+            location.hash = '#/login'
+          } else {
+            location.hash = `#/${tab}`
+          }
+        }
       })
     })
   }
+
   // logo event
   const logo = document.getElementById('logo')
   if (logo) {
-	logo.addEventListener('click', () => {
-	  location.hash = '#/main'
-	})
+    logo.addEventListener('click', () => {
+      location.hash = '#/main'
+    })
   }
-
 }

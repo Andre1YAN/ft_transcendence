@@ -196,45 +196,56 @@ async function fetchFriends(userId: number) {
 }
 
 function setupPresenceSocket(userId: number) {
-  try {
-    socket = new WebSocket('ws://localhost:3000/ws/presence')
-
-    socket.addEventListener('open', () => {
-      socket!.send(JSON.stringify({ type: 'online', userId }))
-      setTimeout(() => fetchFriends(userId), 500)
-    })
-
-    socket.addEventListener('message', (event) => {
-      try {
-        const data = JSON.parse(event.data)
-        if (data.type === 'presence') {
-          const friend = friends.find(f => f.id === data.userId)
-          if (friend) {
-            friend.online = data.status === 'online'
-            updateFriendStatus(friend.id, friend.online)
-          }
-        }
-      } catch (err) {
-        console.error('WebSocket message error:', err)
-      }
-    })
-
-    socket.addEventListener('close', () => {
-      console.log('WebSocket closed')
-      setTimeout(() => {
-        if (document.getElementById('friendList')) {
-          setupPresenceSocket(userId)
-        }
-      }, 3000)
-    })
-
-    socket.addEventListener('error', (err) => {
-      console.error('WebSocket error:', err)
-    })
-  } catch (err) {
-    console.error('Failed to setup WebSocket:', err)
+	try {
+	  socket = new WebSocket('ws://localhost:3000/ws/presence')
+  
+	  socket.addEventListener('open', () => {
+		// 发送上线消息
+		socket.send(JSON.stringify({ type: 'online', userId }))
+		// 可选：初次连接后短暂延时刷新好友列表
+		setTimeout(() => fetchFriends(userId), 500)
+  
+		// 每隔30秒发送一次心跳包
+		setInterval(() => {
+		  if (socket.readyState === WebSocket.OPEN) {
+			socket.send(JSON.stringify({ type: 'ping' }))
+		  }
+		}, 30000)
+	  })
+  
+	  socket.addEventListener('message', (event) => {
+		try {
+		  const data = JSON.parse(event.data)
+		  if (data.type === 'presence') {
+			const friend = friends.find(f => f.id === data.userId)
+			if (friend) {
+			  friend.online = data.status === 'online'
+			  updateFriendStatus(friend.id, friend.online)
+			}
+		  }
+		} catch (err) {
+		  console.error('WebSocket message error:', err)
+		}
+	  })
+  
+	  socket.addEventListener('close', () => {
+		console.log('WebSocket closed')
+		// 若连接关闭，则3秒后重试建立连接
+		setTimeout(() => {
+		  if (document.getElementById('friendList')) {
+			setupPresenceSocket(userId)
+		  }
+		}, 3000)
+	  })
+  
+	  socket.addEventListener('error', (err) => {
+		console.error('WebSocket error:', err)
+	  })
+	} catch (err) {
+	  console.error('Failed to setup WebSocket:', err)
+	}
   }
-}
+  
 
 function updateFriendStatus(friendId: number, isOnline: boolean) {
   const elements = document.querySelectorAll(`[data-friend-id="${friendId}"]`)

@@ -18,11 +18,9 @@ export function render() {
       <div class="backdrop-blur-md bg-white/10 border border-white/10 rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-sm sm:max-w-md text-white">
         <h2 class="text-2xl sm:text-3xl font-bold text-center mb-6">${t('signup.title')}</h2>
 
-        <!-- Google 注册 -->
-        <button class="w-full flex items-center justify-center gap-2 border border-white/20 rounded-md py-2 sm:py-2.5 mb-5 hover:bg-white/10 transition text-sm sm:text-base">
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5" />
-          <span class="font-medium">${t('signup.google')}</span>
-        </button>
+        <!-- Google 登录按钮容器（单独放置，不嵌套在 <button> 内） -->
+		<div id="g_id_signin" class="mb-5"></div>
+
 
         <!-- 分割线 -->
         <div class="relative mb-5 text-center text-sm text-white/60">

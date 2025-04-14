@@ -1,6 +1,7 @@
 import { initStars } from '../components/initStars'
 import { t } from '../State/i18n'
 import { renderLanguageSwitcher, bindLanguageSwitcher } from '../components/LanguageSwitcher'
+import { initializeGoogleSignIn } from '../auth/googleSignIn'  // 导入 Google 初始化函数
 
 export function render() {
   document.body.innerHTML = `
@@ -18,11 +19,8 @@ export function render() {
       <div class="backdrop-blur-md bg-white/10 border border-white/10 rounded-2xl shadow-2xl p-6 sm:p-8 w-full max-w-sm sm:max-w-md text-white">
         <h2 class="text-2xl sm:text-3xl font-bold text-center mb-6">${t('login.title')}</h2>
 
-        <!-- Google 登录按钮 -->
-        <button class="w-full flex items-center justify-center gap-2 border border-white/20 rounded-md py-2 mb-5 hover:bg-white/10 transition text-sm sm:text-base">
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-5 h-5" />
-          <span class="font-medium">${t('login.loginGoogle')}</span>
-        </button>
+        <!-- Google 登录按钮容器（单独放置，不嵌套在按钮内） -->
+        <div id="g_id_signin" class="mb-5"></div>
 
         <!-- 分割线 -->
         <div class="relative mb-5 text-center text-sm text-white/60">
@@ -63,6 +61,9 @@ export function render() {
   bindLanguageSwitcher()
   requestAnimationFrame(() => initStars())
 
+  // 初始化 Google 登录按钮
+  initializeGoogleSignIn()
+
   document.querySelector('form')?.addEventListener('submit', async (e) => {
     e.preventDefault()
 
@@ -88,15 +89,12 @@ export function render() {
         throw new Error(data.message || 'Login failed.')
       }
 
-      // 🔐 成功登录后可以把 user 存到 localStorage，或使用状态管理
+      // 登录成功后保存用户信息
       localStorage.setItem('user', JSON.stringify(data))
       alert(`Welcome back, ${data.displayName}!`)
-
-      // 跳转到主页面或 profile 页面
       location.hash = '#/main'
     } catch (err: any) {
       alert(err.message || 'Something went wrong.')
     }
   })
-
 }
