@@ -13,7 +13,11 @@
 		"passwordPlaceholder": "Password",
 		"submit": "Register",
 		"footer": "Already have an account?",
-		"login": "Login"
+		"login": "Login",
+		"upload": "Upload Avatar",
+		"enable2fa": "Enable 2FA (Two-Factor Authentication)",
+		"uploadSuccess": "Avatar uploaded successfully!",
+		"uploadFail": "Failed to upload avatar"
 	  },
 	"login": {
 		"title": "👋 Welcome Back",
@@ -49,7 +53,8 @@
 		"tip": "Check your history or challenge your friends!",
 		"tournamentMode": "Tournament Mode",
 		"tournamentPlayers": "Participants",  
-		"currentMatch": "Current Match"  
+		"currentMatch": "Current Match",
+		"tournamentEnd": "🏁 Tournament Finished!" 
 	},
 	"local": {
 		"title": "Double Local Mode",
@@ -97,7 +102,6 @@
 	"rank": "Tournament Rank",
 	"duplicateWarning": "Player names must be unique.",
 	"playersTitle": "Participants",         
-	"matchStart": "Start Match",           
-	"tournamentEnd": "🏁 Tournament Finished!" 
+	"matchStart": "Start Match"       
 	}
   }

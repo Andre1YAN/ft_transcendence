@@ -13,7 +13,11 @@
 	  "passwordPlaceholder": "密码",
 	  "submit": "注册",
 	  "footer": "已有账户？",
-	  "login": "登录"
+	  "login": "登录",
+	  "upload": "上传头像",
+	  "enable2fa": "启用双重身份验证",
+	  "uploadSuccess": "上传成功😄",
+	  "uploadFail": "上传失败😭"
 	},
 	"login": {
 	  "title": "👋 欢迎回来",
@@ -49,7 +53,8 @@
 	  "tip": "查看你的历史记录或挑战你的朋友！",
 	  "tournamentMode": "锦标赛模式",
 	  "tournamentPlayers": "参赛者",
-	  "currentMatch": "当前比赛"
+	  "currentMatch": "当前比赛",
+	  "tournamentEnd": "🏁 锦标赛结束！"
 	},
 	"local": {
 	  "title": "本地双人模式",
@@ -97,8 +102,7 @@
 	  "rank": "锦标赛排名",
 	  "duplicateWarning": "玩家名称必须唯一。",
 	  "playersTitle": "参赛者",
-	  "matchStart": "开始比赛",
-	  "tournamentEnd": "🏁 锦标赛结束！"
+	  "matchStart": "开始比赛"
 	}
   }
   
