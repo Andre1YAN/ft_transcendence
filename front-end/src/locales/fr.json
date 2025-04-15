@@ -13,7 +13,11 @@
 	  "passwordPlaceholder": "Mot de passe",
 	  "submit": "S'inscrire",
 	  "footer": "Vous avez déjà un compte ?",
-	  "login": "Se connecter"
+	  "login": "Se connecter",
+	  "upload": "Téléverser un avatar",
+	  "enable2fa": "Activer l’authentification à deux facteurs",
+	  "uploadSuccess": "Avatar téléchargé avec succès !",
+	  "uploadFail": "Échec du téléchargement de l’avatar"
 	},
 	"login": {
 	  "title": "👋 Bienvenue à nouveau",
@@ -49,7 +53,8 @@
 	  "tip": "Vérifiez votre historique ou défiez vos amis !",
 	  "tournamentMode": "Mode tournoi",
 	  "tournamentPlayers": "Participants",
-	  "currentMatch": "Match en cours"
+	  "currentMatch": "Match en cours",
+	  "tournamentEnd": "🏁 Tournoi terminé !"
 	},
 	"local": {
 	  "title": "Mode Double Local",
@@ -97,8 +102,7 @@
 	  "rank": "Classement du tournoi",
 	  "duplicateWarning": "Les noms des joueurs doivent être uniques.",
 	  "playersTitle": "Participants",
-	  "matchStart": "Commencer le match",
-	  "tournamentEnd": "🏁 Tournoi terminé !"
+	  "matchStart": "Commencer le match"
 	}
   }
   

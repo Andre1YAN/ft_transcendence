@@ -42,13 +42,20 @@ export function render() {
             class="w-full bg-transparent border border-white/20 rounded-md px-4 py-2 sm:py-2.5 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-orange-400 transition placeholder:text-white/40 text-white"
           />
 		  <input type="checkbox" id="enable2fa" class="accent-orange-500" />
-		  <label for="enable2fa">Enable 2FA (Two-Factor Authentication)</label>
-		  <input
-			type="file"
-			id="avatarInput"
-			accept="image/*"
-			class="w-full bg-transparent border border-white/20 rounded-md px-4 py-2 sm:py-2.5 text-white text-sm"
-		  />
+		<label for="enable2fa">${t('signup.enable2fa')}</label>
+		<label
+		for="avatarInput"
+		class="block cursor-pointer bg-white/20 hover:bg-white/30 transition text-white px-4 py-2 rounded-md text-center text-sm"
+		>
+		${t('signup.upload')}
+		</label>
+		<input
+		type="file"
+		id="avatarInput"
+		accept="image/*"
+		class="hidden"
+		/>
+		<p id="uploadStatus" class="text-sm text-green-400 mt-2 hidden">✅ ${t('signup.uploadSuccess')}</p>
 
           <button
             type="submit"
@@ -70,6 +77,19 @@ export function render() {
   bindLanguageSwitcher()
   requestAnimationFrame(() => initStars())
   initializeGoogleSignIn()
+
+  const fileInput = document.getElementById('avatarInput') as HTMLInputElement
+  fileInput?.addEventListener('change', async () => {
+    const file = fileInput.files?.[0]
+    if (!file) return
+
+    try {
+      await toBase64(file)  // 确保可读取
+      showUploadStatus(true)
+    } catch {
+      showUploadStatus(false)
+    }
+  })
 
   document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
 	e.preventDefault()
@@ -123,3 +143,20 @@ export function render() {
 	})
   }
 }
+
+function showUploadStatus(success: boolean) {
+	const el = document.getElementById('uploadStatus')
+	if (!el) return
+  
+	el.textContent = success
+	  ? '✅ ' + t('signup.uploadSuccess')
+	  : '❌ ' + t('signup.uploadFail')
+  
+	el.classList.remove('hidden')
+	el.className = `text-sm mt-2 ${success ? 'text-green-400' : 'text-red-400'}`
+  
+	setTimeout(() => {
+	  el?.classList.add('hidden')
+	}, 2000)
+  }
+  
