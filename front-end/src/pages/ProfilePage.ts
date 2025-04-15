@@ -6,8 +6,8 @@ export function render() {
   const user = JSON.parse(localStorage.getItem('user') || 'null')
   const avatarUrl = user?.avatarUrl || 'https://i.pravatar.cc/100?u=default'
   const displayName = user?.displayName || 'Unknown'
-  const wins = user?.wins ?? 0
-  const losses = user?.losses ?? 0
+  const wins = '-'
+  const losses = '-'
 
   document.body.innerHTML = `
     <div class="relative z-0 min-h-screen bg-gradient-to-b from-[#1e1e2f] to-[#10101a] text-white font-press">
@@ -46,11 +46,11 @@ export function render() {
               <div class="flex gap-4">
                 <div class="flex-1">
                   <p class="text-gray-400 text-sm mb-1">${t('profile.wins')}</p>
-                  <div class="text-xl font-bold">${wins}</div>
+                  <div id="wins" class="text-xl font-bold">${wins}</div>
                 </div>
                 <div class="flex-1">
                   <p class="text-gray-400 text-sm mb-1">${t('profile.losses')}</p>
-                  <div class="text-xl font-bold">${losses}</div>
+                  <div id="losses" class="text-xl font-bold">${losses}</div>
                 </div>
               </div>
 
@@ -88,6 +88,21 @@ fetch(`http://localhost:3000/users/${user.id}/matches`, {
 })
 .then(res => res.json())
 .then((matches) => {
+
+	let wins = 0
+let losses = 0
+
+matches.forEach((match) => {
+  const isUser1 = match.user1.id === user.id
+  const myScore = isUser1 ? match.score1 : match.score2
+  const oppScore = isUser1 ? match.score2 : match.score1
+  if (myScore > oppScore) wins++
+  else losses++
+})
+
+document.getElementById('wins')!.textContent = String(wins)
+document.getElementById('losses')!.textContent = String(losses)
+
   const container = document.getElementById('matchHistory')!
   if (!Array.isArray(matches)) {
 	container.innerHTML = `<p class="text-red-400 text-sm">❌ ${t('profile.errorFetching')}</p>`
