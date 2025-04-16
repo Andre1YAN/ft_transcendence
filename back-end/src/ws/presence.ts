@@ -23,6 +23,30 @@ export async function setupPresenceSocket(fastify: FastifyInstance) {
 
         console.log('📨 WebSocket received message:', message)
 
+		// if (message.type === 'chat' && typeof message.message === 'string') {
+		// 	for (const [id, otherSocket] of onlineUsers.entries()) {
+		// 	  if (otherSocket.readyState === 1) {
+		// 		otherSocket.send(JSON.stringify({
+		// 		  type: 'chat',
+		// 		  from: userId,
+		// 		  fromName: message.fromName || `User ${userId}`,
+		// 		  message: message.message,
+		// 		}))
+		// 	  }
+		// 	}
+		//   }		 
+		
+        if (message.type === 'chat') {
+			const receiverSocket = onlineUsers.get(message.to)
+			if (receiverSocket && receiverSocket.readyState === 1) {
+			  receiverSocket.send(JSON.stringify({
+				type: 'chat',
+				from: userId,
+				message: message.message
+			  }))
+			}
+		  }
+
         if (message.type === 'online' && typeof message.userId === 'number') {
           userId = message.userId
           onlineUsers.set(userId, socket)

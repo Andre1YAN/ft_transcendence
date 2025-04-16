@@ -1,10 +1,12 @@
 import { renderNavbar, bindNavbarEvents } from '../components/Navbar'
 import { initStars } from '../components/initStars'
 import { t } from '../State/i18n'
+import { renderChatBox } from '../components/ChatBox'
 
 function setupPresenceSocket(userId: number) {
   try {
     const socket = new WebSocket('ws://localhost:3000/ws/presence')
+	renderChatBox(userId, socket)
 
     socket.addEventListener('open', () => {
       socket.send(JSON.stringify({ type: 'online', userId }))

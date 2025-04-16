@@ -13,6 +13,7 @@ import { userRoutes } from './route/userRoutes'
 import { initGuestUser } from './utils/initGuestUser'
 import { registerJwt } from './utils/jwt'
 import { setupPresenceSocket } from './ws/presence'
+import { messageRoutes } from './route/messageRoutes'
 
 const fastify = Fastify({
   logger: true,
@@ -39,6 +40,7 @@ async function buildServer() {
   await fastify.register(googleAuthRoutes)
   await setupPresenceSocket(fastify)
   await fastify.register(twofaRoutes)
+  await fastify.register(messageRoutes)
 
   return fastify
 }

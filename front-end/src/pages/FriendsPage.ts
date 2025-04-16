@@ -17,14 +17,12 @@ export async function render() {
 
   await fetchFriends(user.id)
   renderUI()
-  setupPresenceSocket(user.id)
+  await setupPresenceSocket(user.id)
   bindLanguageSwitcher()
   requestAnimationFrame(() => initStars())
 }
 
 function renderUI() {
-  const user = JSON.parse(localStorage.getItem('user') || 'null')
-
   document.body.innerHTML = `
     <div class="relative z-0 min-h-screen bg-gradient-to-b from-[#1e1e2f] to-[#10101a] text-white font-press px-4">
       <canvas id="smoke-bg" class="fixed inset-0 w-full h-full -z-10 pointer-events-none"></canvas>
@@ -75,7 +73,10 @@ function renderFriendItems(list: typeof friends) {
           </p>
         </div>
       </div>
-      <button class="delete-friend text-red-400 hover:text-red-600" data-id="${friend.id}" aria-label="Delete friend">✖</button>
+		<div class="flex gap-2">
+			<button class="open-chat text-blue-400 hover:text-blue-600" data-id="${friend.id}" data-name="${friend.name}" aria-label="Chat">💬</button>
+			<button class="delete-friend text-red-400 hover:text-red-600" data-id="${friend.id}" aria-label="Delete friend">✖</button>
+		</div>
     </div>
   `).join('')
 }
@@ -149,7 +150,19 @@ function bindFriendEvents(currentUserId: number) {
   })
 
   bindDeleteEvents(currentUserId)
+  bindChatEvents(currentUserId) 
 }
+
+function bindChatEvents(currentUserId: number) {
+	document.querySelectorAll<HTMLButtonElement>('.open-chat').forEach(btn => {
+	  btn.addEventListener('click', async () => {
+		const friendId = Number(btn.getAttribute('data-id'))
+		const friendName = btn.getAttribute('data-name') || `User ${friendId}`
+		openChatWindow(currentUserId, friendId, friendName)
+	  })
+	})
+  }
+  
 
 function bindDeleteEvents(currentUserId: number) {
   document.querySelectorAll<HTMLButtonElement>('.delete-friend').forEach(btn => {
@@ -190,6 +203,7 @@ async function fetchFriends(userId: number) {
     if (list) {
       list.innerHTML = renderFriendItems(friends)
       bindDeleteEvents(userId)
+	  bindChatEvents(userId)
     }
   } catch (err) {
     console.error('Error fetching friends:', err)
@@ -218,6 +232,23 @@ function setupPresenceSocket(userId: number) {
 	  socket.addEventListener('message', (event) => {
 		try {
 		  const data = JSON.parse(event.data)
+
+		  if (data.type === 'chat') {
+			const fromId = data.from
+			const message = data.message
+		  
+			if (!user?.id) return
+		  
+			// 如果窗口未打开，先打开窗口
+			const existingBox = document.getElementById(`chat-box-${fromId}`)
+			if (!existingBox) {
+			  setTimeout(() => appendMessage(user.id, fromId, message, false), 300)
+			} else {
+			  appendMessage(user.id, fromId, message, false)
+			}
+		  }
+
+		  
 		  if (data.type === 'presence') {
 			const friend = friends.find(f => f.id === data.userId)
 			if (friend) {
@@ -234,11 +265,9 @@ function setupPresenceSocket(userId: number) {
 		console.log('WebSocket closed')
 		// 若连接关闭，则3秒后重试建立连接
 		setTimeout(() => {
-		  if (document.getElementById('friendList')) {
-			setupPresenceSocket(userId)
-		  }
-		}, 3000)
-	  })
+		  setupPresenceSocket(userId)
+		}, 3000) // ✅ 放在回调函数的括号后面
+	  })	  
   
 	  socket.addEventListener('error', (err) => {
 		console.error('WebSocket error:', err)
@@ -259,3 +288,105 @@ function updateFriendStatus(friendId: number, isOnline: boolean) {
     }
   })
 }
+  
+  async function loadMessages(userId: number, friendId: number) {
+	try {
+	  const res = await fetch(`http://localhost:3000/messages/${friendId}`, {
+		headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+	  })
+	  const messages = await res.json()
+	  const box = document.getElementById(`chat-messages-${friendId}`)
+	  if (box) {
+		box.innerHTML = ''
+		for (const msg of messages) {
+		  appendMessage(userId, friendId, msg.content, msg.senderId === userId)
+		}
+	  }
+	} catch (err) {
+	  console.error('Failed to load messages:', err)
+	}
+  }
+
+  async function openChatWindow(userId: number, friendId: number, friendName: string) {
+	const existing = document.getElementById(`chat-box-${friendId}`)
+	if (existing) return
+
+	const container = document.createElement('div')
+	container.id = `chat-box-${friendId}`
+	container.className = `
+	fixed bottom-4 right-4 w-80 bg-[#1e1e2f]/90 backdrop-blur-md
+	rounded-2xl shadow-2xl text-white z-50 flex flex-col max-h-[80vh] overflow-hidden
+  `  
+	container.innerHTML = `
+	<div class="flex justify-between items-center px-4 py-2 bg-[#2a2a3d] border-b border-[#333]">
+	  <span class="font-semibold text-lg">${friendName}</span>
+	  <button class="close-chat text-red-400 hover:text-red-600 transition-transform transform hover:scale-125">✖</button>
+	</div>
+	<div class="flex-1 overflow-y-auto p-3 space-y-2 text-sm" id="chat-messages-${friendId}">
+	  <div class="text-center text-gray-400">Loading...</div>
+	</div>
+	<div class="p-2 border-t border-[#333] bg-[#1b1b2f]">
+	  <input
+		type="text"
+		placeholder="Type a message..."
+		class="w-full px-3 py-2 rounded-xl bg-[#2a2a3d] border border-[#444] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+		id="chat-input-${friendId}"
+	  >
+	</div>
+  `
+  
+	document.body.appendChild(container)
+
+	container.querySelector('.close-chat')?.addEventListener('click', () => container.remove())
+
+	const input = container.querySelector(`#chat-input-${friendId}`) as HTMLInputElement
+	input.addEventListener('keypress', async (e) => {
+	  if (e.key === 'Enter' && input.value.trim()) {
+		const content = input.value.trim()
+		input.value = ''
+		sendMessage(friendId, content)
+		appendMessage(userId, friendId, content, true)
+	  }
+	})
+
+	await loadMessages(userId, friendId)
+}
+  
+  async function sendMessage(receiverId: number, content: string) {
+	try {
+	  await fetch(`http://localhost:3000/messages`, {
+		method: 'POST',
+		headers: {
+		  'Content-Type': 'application/json',
+		  'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+		},
+		body: JSON.stringify({ receiverId, content })
+	  })
+	} catch (err) {
+	  console.error('Failed to send message:', err)
+	}
+	if (socket && socket.readyState === WebSocket.OPEN) {
+		socket.send(JSON.stringify({
+		  type: 'chat',
+		  to: receiverId,
+		  message: content,
+		}))
+	  }
+	  
+  }
+  
+  function appendMessage(userId: number, friendId: number, text: string, isSelf: boolean) {
+	const box = document.getElementById(`chat-messages-${friendId}`)
+	if (!box) return
+	const bubble = document.createElement('div')
+	bubble.className = `
+	max-w-[75%] px-4 py-2 rounded-xl text-sm break-words
+	${isSelf
+	  ? 'bg-gradient-to-r from-blue-500 to-blue-700 text-white ml-auto text-right'
+	  : 'bg-[#3a3a4d] text-white'}
+  `  
+	bubble.textContent = text
+	box.appendChild(bubble)
+	box.scrollTop = box.scrollHeight
+  }
+  
