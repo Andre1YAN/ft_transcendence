@@ -32,6 +32,18 @@ export async function messageRoutes(fastify: FastifyInstance) {
         return reply.code(403).send({ message: 'Only friends can send messages' })
       }
 
+      // 检查是否被对方屏蔽
+      const isBlocked = await prisma.blockedUser.findFirst({
+        where: {
+          blockerId: receiverId,
+          blockedId: senderId,
+        },
+      })
+
+      if (isBlocked) {
+        return reply.code(403).send({ message: 'You are blocked by this user' })
+      }
+
       const message = await prisma.privateMessage.create({
         data: {
           senderId,
@@ -40,7 +52,14 @@ export async function messageRoutes(fastify: FastifyInstance) {
         },
       })
 
-      return reply.send({ message })
+      // 返回创建的消息，包含ID
+      return reply.send({ 
+        id: message.id,
+        senderId: message.senderId,
+        receiverId: message.receiverId,
+        content: message.content,
+        sentAt: message.sentAt
+      })
     },
   })
 

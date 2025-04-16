@@ -1,8 +1,10 @@
 import websocketPlugin from '@fastify/websocket'
 import { FastifyInstance } from 'fastify'
 import type WebSocket from 'ws'
+import { PrismaClient } from '@prisma/client'
 
 export const onlineUsers = new Map<number, WebSocket>()
+const prisma = new PrismaClient()
 
 export async function setupPresenceSocket(fastify: FastifyInstance) {
   await fastify.register(websocketPlugin)
@@ -12,57 +14,66 @@ export async function setupPresenceSocket(fastify: FastifyInstance) {
 
     let userId: number | null = null
 
-    socket.on('message', (rawMessage: WebSocket.RawData) => {
+    socket.on('message', async (rawMessage: WebSocket.RawData) => {
       try {
         const message = JSON.parse(rawMessage.toString())
-
-        // 处理心跳包：忽略 type 为 'ping' 的消息
-        if (message.type === 'ping') {
-          return
-        }
+        if (message.type === 'ping') return
 
         console.log('📨 WebSocket received message:', message)
 
-		// if (message.type === 'chat' && typeof message.message === 'string') {
-		// 	for (const [id, otherSocket] of onlineUsers.entries()) {
-		// 	  if (otherSocket.readyState === 1) {
-		// 		otherSocket.send(JSON.stringify({
-		// 		  type: 'chat',
-		// 		  from: userId,
-		// 		  fromName: message.fromName || `User ${userId}`,
-		// 		  message: message.message,
-		// 		}))
-		// 	  }
-		// 	}
-		//   }		 
-		
         if (message.type === 'chat') {
-			const receiverSocket = onlineUsers.get(message.to)
-			if (receiverSocket && receiverSocket.readyState === 1) {
-			  receiverSocket.send(JSON.stringify({
-				type: 'chat',
-				from: userId,
-				message: message.message
-			  }))
-			}
-		  }
+          if (!userId) return
+
+          const isBlocked = await prisma.blockedUser.findFirst({
+            where: {
+              blockerId: message.to,
+              blockedId: userId,
+            },
+          })
+
+          if (isBlocked) {
+            console.log(`❌ Message blocked: user ${userId} is blocked by user ${message.to}`)
+            return
+          }
+
+          const messageId = message.messageId || `ws-${userId}-${message.to}-${Date.now()}`
+          
+          const receiverSocket = onlineUsers.get(message.to)
+          if (receiverSocket && receiverSocket.readyState === 1) {
+            receiverSocket.send(JSON.stringify({
+              type: 'chat',
+              from: userId,
+              message: message.message,
+              messageId: messageId
+            }))
+          }
+          
+          const senderSocket = onlineUsers.get(userId)
+          if (senderSocket && senderSocket.readyState === 1) {
+            senderSocket.send(JSON.stringify({
+              type: 'message_sent',
+              to: message.to,
+              messageId: messageId
+            }))
+          }
+        }
 
         if (message.type === 'online' && typeof message.userId === 'number') {
           userId = message.userId
           onlineUsers.set(userId, socket)
           console.log(`🟢 User ${userId} is now online. Total online: ${onlineUsers.size}`)
 
-          // 广播该用户上线消息给其他在线用户
           for (const [id, otherSocket] of onlineUsers.entries()) {
             if (id !== userId && otherSocket.readyState === 1) {
               otherSocket.send(JSON.stringify({
                 type: 'presence',
                 userId,
-                status: 'online'
+                status: 'online',
               }))
             }
           }
         }
+
       } catch (err) {
         console.error('❌ Error processing message:', err)
       }
@@ -75,13 +86,12 @@ export async function setupPresenceSocket(fastify: FastifyInstance) {
         onlineUsers.delete(userId)
         console.log(`🔕 User ${userId} is now offline. Remaining online: ${onlineUsers.size}`)
 
-        // 广播该用户离线消息给其他在线用户
         for (const [id, otherSocket] of onlineUsers.entries()) {
           if (otherSocket.readyState === 1) {
             otherSocket.send(JSON.stringify({
               type: 'presence',
               userId,
-              status: 'offline'
+              status: 'offline',
             }))
           }
         }

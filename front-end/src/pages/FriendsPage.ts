@@ -6,7 +6,10 @@ import { renderLanguageSwitcher, bindLanguageSwitcher } from '../components/Lang
 import { initGlobalSocket } from '../ws/globalSocket'
 
 // 全局变量 friends 保持不变
-let friends: { id: number; name: string; avatarUrl: string; online: boolean }[] = []
+let friends: { id: number; name: string; avatarUrl: string; online: boolean; blocked: boolean }[] = []
+
+// 用于跟踪已显示的消息，防止重复
+const displayedMessages = new Set<string>();
 
 export async function render() {
   const user = JSON.parse(localStorage.getItem('user') || 'null')
@@ -28,28 +31,31 @@ export async function render() {
   // 注册全局 WebSocket 事件回调，更新在线状态和接收聊天消息
   const currentUser = user; // 已解析的 user 对象
   if (window.globalSocket) {
-	// window.globalSocket.on('presence', (data: any) => {
-	// 	console.log('收到 presence 消息：', data);
-    //   // data 格式: { type: 'presence', userId: number, status: 'online' | 'offline' }
-    //   const friend = friends.find(f => f.id === data.userId)
-    //   if (friend) {
-    //     friend.online = data.status === 'online'
-    //     updateFriendStatus(friend.id, friend.online)
-    //   }
-    // })
     window.globalSocket.on('chat', (data: any) => {
-      // data 格式: { type: 'chat', from: number, message: string }
+      // data 格式: { type: 'chat', from: number, message: string, messageId: string }
       const fromId = data.from
       const message = data.message
+      const messageId = data.messageId
       if (!currentUser?.id) return
+      
+      // 不处理自己发送的消息，因为发送时已经显示
+      if (fromId === currentUser.id) {
+        return
+      }
       
       // 如果聊天窗口未打开则延时追加消息
       const existingBox = document.getElementById(`chat-box-${fromId}`)
       if (!existingBox) {
-        setTimeout(() => appendMessage(currentUser.id, fromId, message, false), 300)
+        setTimeout(() => appendMessage(currentUser.id, fromId, message, false, messageId), 300)
       } else {
-        appendMessage(currentUser.id, fromId, message, false)
+        appendMessage(currentUser.id, fromId, message, false, messageId)
       }
+    })
+    
+    // 添加消息发送确认处理
+    window.globalSocket.on('message_sent', (data: any) => {
+      console.log('Message sent confirmation:', data)
+      // 可以在这里添加消息发送成功的UI反馈，比如消息已送达标记
     })
   }
   
@@ -111,6 +117,9 @@ function renderFriendItems(list: typeof friends) {
       <div class="flex gap-2">
         <button class="open-chat text-blue-400 hover:text-blue-600" data-id="${friend.id}" data-name="${friend.name}" aria-label="Chat">💬</button>
         <button class="delete-friend text-red-400 hover:text-red-600" data-id="${friend.id}" aria-label="Delete friend">✖</button>
+		  <button class="toggle-block text-yellow-400 hover:text-yellow-600" data-id="${friend.id}">
+			${friend.blocked ? '✅ Unblock' : '🔒 Block'}
+		</button>
       </div>
     </div>
   `).join('')
@@ -147,6 +156,45 @@ function bindFriendEvents(currentUserId: number) {
 
   document.addEventListener('click', () => hideStatusMessage())
 
+    // 👇插入这里
+	friendList.addEventListener('click', async (e) => {
+		const target = e.target as HTMLElement
+		if (!target.classList.contains('toggle-block')) return
+	
+		const friendId = Number(target.getAttribute('data-id'))
+		const isUnblock = target.textContent?.includes('Unblock')
+	
+		try {
+		  const url = isUnblock
+			? `http://localhost:3000/users/block/${friendId}`
+			: 'http://localhost:3000/users/block'
+	
+		  console.log(`[${isUnblock ? 'UNBLOCK' : 'BLOCK'}] sending request to ${url}`)
+	
+		  const res = await fetch(url, {
+			method: isUnblock ? 'DELETE' : 'POST',
+			headers: {
+			  'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+			  ...(isUnblock ? {} : { 'Content-Type': 'application/json' }),
+			},
+			...(isUnblock ? {} : { body: JSON.stringify({ blockedId: friendId }) }),
+		  })
+	
+		  const data = await res.json()
+		  if (!res.ok) {
+			showStatusMessage(data.message || 'Failed to update block status', true)
+			return
+		  }
+	
+		  showStatusMessage(data.message || 'Success')
+		  await fetchFriends(currentUserId)
+		} catch (err) {
+		  console.error('Block/unblock error:', err)
+		  showStatusMessage('Network error while updating block status', true)
+		}
+	  })
+
+	  
   searchInput.addEventListener('input', () => {
     hideStatusMessage()
     const keyword = searchInput.value.toLowerCase()
@@ -248,7 +296,7 @@ async function fetchFriends(userId: number) {
 // 使用全局的 window.globalSocket 来发送消息，不再重复建立 WebSocket 连接
 async function sendMessage(receiverId: number, content: string) {
   try {
-    await fetch(`http://localhost:3000/messages`, {
+    const response = await fetch(`http://localhost:3000/messages`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -256,30 +304,56 @@ async function sendMessage(receiverId: number, content: string) {
       },
       body: JSON.stringify({ receiverId, content })
     })
+    
+    // 获取消息ID用于跟踪
+    const messageData = await response.json()
+    const messageId = messageData.id
+    
+    if (
+      window.globalSocket &&
+      window.globalSocket.getSocket() &&
+      window.globalSocket.getSocket().readyState === WebSocket.OPEN
+    ) {
+      window.globalSocket.send({
+        type: 'chat',
+        to: receiverId,
+        message: content,
+        messageId: messageId // 添加消息ID
+      })
+    }
+    
+    // 在本地立即显示消息并标记为已显示
+    appendMessage(JSON.parse(localStorage.getItem('user') || '{}').id, receiverId, content, true, messageId)
+    
   } catch (err) {
     console.error('Failed to send message:', err)
-  }
-  if (
-    window.globalSocket &&
-    window.globalSocket.getSocket() &&
-    window.globalSocket.getSocket().readyState === WebSocket.OPEN
-  ) {
-    window.globalSocket.send({
-      type: 'chat',
-      to: receiverId,
-      message: content,
-    })
+    // 即使请求失败，也显示消息并使用时间戳作为临时ID
+    const tempId = `temp-${Date.now()}`
+    appendMessage(JSON.parse(localStorage.getItem('user') || '{}').id, receiverId, content, true, tempId)
   }
 }
 
-function appendMessage(userId: number, friendId: number, text: string, isSelf: boolean) {
+function appendMessage(userId: number, friendId: number, text: string, isSelf: boolean, messageId?: string) {
   const box = document.getElementById(`chat-messages-${friendId}`)
   if (!box) return
+  
+  // 生成消息唯一标识
+  const msgIdentifier = messageId || `${userId}-${friendId}-${text}-${Date.now()}`
+  
+  // 如果消息已经显示过，则不再显示
+  if (displayedMessages.has(msgIdentifier)) {
+    return
+  }
+  
+  // 标记消息为已显示
+  displayedMessages.add(msgIdentifier)
+  
   const bubble = document.createElement('div')
   bubble.className = `
     max-w-[75%] px-4 py-2 rounded-xl text-sm break-words
     ${isSelf ? 'bg-gradient-to-r from-blue-500 to-blue-700 text-white ml-auto text-right' : 'bg-[#3a3a4d] text-white'}
   `
+  bubble.dataset.messageId = msgIdentifier
   bubble.textContent = text
   box.appendChild(bubble)
   box.scrollTop = box.scrollHeight
@@ -294,8 +368,10 @@ async function loadMessages(userId: number, friendId: number) {
     const box = document.getElementById(`chat-messages-${friendId}`)
     if (box) {
       box.innerHTML = ''
+      // 清空已显示消息的集合
+      displayedMessages.clear()
       for (const msg of messages) {
-        appendMessage(userId, friendId, msg.content, msg.senderId === userId)
+        appendMessage(userId, friendId, msg.content, msg.senderId === userId, msg.id)
       }
     }
   } catch (err) {
@@ -363,5 +439,4 @@ export function handlePresenceUpdate(data: { type: 'presence'; userId: number; s
 	  updateFriendStatus(friend.id, friend.online)
 	}
   }
-  
   

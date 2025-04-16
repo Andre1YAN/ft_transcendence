@@ -4,11 +4,12 @@ type WSCallback = (data: any) => void;
 interface WSListeners {
   presence: WSCallback[];
   chat: WSCallback[];
+  message_sent: WSCallback[];
 }
 
 class GlobalSocket {
 	private socket: WebSocket | null = null;
-	private listeners: WSListeners = { presence: [], chat: [] };
+	private listeners: WSListeners = { presence: [], chat: [], message_sent: [] };
 	private userId: number;
 	private pingIntervalId: ReturnType<typeof setInterval> | null = null;
 	private manuallyClosed = false; // ✅ 新增
@@ -56,6 +57,8 @@ class GlobalSocket {
 			this.listeners.presence.forEach((cb) => cb(data));
 		  } else if (data.type === 'chat') {
 			this.listeners.chat.forEach((cb) => cb(data));
+		  } else if (data.type === 'message_sent') {
+			this.listeners.message_sent.forEach((cb) => cb(data));
 		  }
 		} catch (err) {
 		  console.error('GlobalSocket message error:', err);
@@ -67,11 +70,11 @@ class GlobalSocket {
 	  });
 	}
   
-	public on(eventType: 'presence' | 'chat', callback: WSCallback) {
+	public on(eventType: 'presence' | 'chat' | 'message_sent', callback: WSCallback) {
 	  this.listeners[eventType].push(callback);
 	}
 
-	public off(eventType: 'presence' | 'chat', callback: WSCallback) {
+	public off(eventType: 'presence' | 'chat' | 'message_sent', callback: WSCallback) {
 		this.listeners[eventType] = this.listeners[eventType].filter(cb => cb !== callback)
 	  }	  
   

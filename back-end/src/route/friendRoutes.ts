@@ -1,38 +1,62 @@
+// src/types/friendRoutes.ts
+
 import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import { CreateFriendSchema, CreateFriendDto, FriendsListDto, FriendIdSchema, FriendIdDto } from '../types/friend.dto'
 import { toFriendsListDto } from "../utils/friendsMapper"
 import { onlineUsers } from '../ws/presence'
 import { UserIdDto, UserIdSchema } from '../types/user.dto'
 
-export async function friendRoutes(fastify: FastifyInstance) {
+export async function friendRoutes(fastify: FastifyInstance) { 
   // Get friends
-  fastify.get('/users/:userId/friends', { schema: {params: UserIdSchema }, preHandler: [fastify.authenticate] } ,async (request: FastifyRequest<{ Params: UserIdDto }>, reply: FastifyReply) => {
-    const userId = request.params.userId
-
-    try {
-      const friends = await fastify.prisma.friend.findMany({
-        where: { userId: userId },
-        include: {
-          friend: {
-            select: {
-              id: true,
-              displayName: true,
-              avatarUrl: true,
-            },
-          },
-        },
-      })
-
-      const friendsList: FriendsListDto[] = friends.map(friend =>
-        toFriendsListDto(friend.friend, onlineUsers.has(friend.friend.id))
-      )
-
-      reply.send(friendsList)
-    } catch (err) {
-      console.error('Error fetching friends:', err)
-      reply.status(500).send({ message: 'Failed to fetch friends', error: String(err) })
-    }
-  })
+  fastify.get('/users/:userId/friends', {
+	schema: { params: UserIdSchema },
+	preHandler: [fastify.authenticate]
+  }, async (
+	request: FastifyRequest<{ Params: UserIdDto }>,
+	reply: FastifyReply
+  ) => {
+	const userId = request.params.userId
+	const currentUserId = (request.user as { id: number }).id
+  
+	try {
+	  const friends = await fastify.prisma.friend.findMany({
+		where: { userId },
+		include: {
+		  friend: {
+			select: {
+			  id: true,
+			  displayName: true,
+			  avatarUrl: true,
+			},
+		  },
+		},
+	  })
+  
+	  const blockedUsers = await fastify.prisma.blockedUser.findMany({
+		where: { blockerId: currentUserId },
+		select: { blockedId: true },
+	  })
+	  const blockedIds = new Set(blockedUsers.map(b => b.blockedId))
+  
+	  const friendsList: FriendsListDto[] = friends.map(friend => {
+		const isOnline = onlineUsers.has(friend.friend.id)
+		const isBlocked = blockedIds.has(friend.friend.id)
+  
+		return {
+		  id: friend.friend.id,
+		  name: friend.friend.displayName,
+		  avatarUrl: friend.friend.avatarUrl || undefined,
+		  online: isOnline,
+		  blocked: isBlocked,
+		}
+	  })
+  
+	  reply.send(friendsList)
+	} catch (err: any) {
+	  console.error('Error fetching friends:', err.stack || err)
+	  reply.status(500).send({ message: 'Failed to fetch friends', error: String(err) })
+	}
+  })  
 
   // Add friend
   fastify.post('/users/friends', { schema: {body: CreateFriendSchema}, preHandler: [fastify.authenticate] }, async (request: FastifyRequest<{ Body: CreateFriendDto }>, reply: FastifyReply) => {

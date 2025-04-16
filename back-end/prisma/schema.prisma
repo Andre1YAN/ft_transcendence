@@ -48,6 +48,9 @@ model User {
 
   sentMessages     PrivateMessage[] @relation("SentMessages")
   receivedMessages PrivateMessage[] @relation("ReceivedMessages")
+
+  blocks    BlockedUser[] @relation("Blocker")
+  blockedBy BlockedUser[] @relation("Blocked")
 }
 
 model Friend {
@@ -103,4 +106,18 @@ model PrivateMessage {
   receiverId Int
   content    String
   sentAt     DateTime @default(now())
+}
+
+model BlockedUser {
+  id        Int  @id @default(autoincrement())
+  blocker   User @relation("Blocker", fields: [blockerId], references: [id])
+  blockerId Int
+  blocked   User @relation("Blocked", fields: [blockedId], references: [id])
+  blockedId Int
+
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
 }

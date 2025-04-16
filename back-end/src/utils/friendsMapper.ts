@@ -1,3 +1,5 @@
+// src/utils/friendsMapper.ts
+
 import { FriendsListDto } from '../types/friend.dto'
 
 export function toFriendsListDto(friend: any, isOnline: boolean): FriendsListDto {
