@@ -2,6 +2,16 @@
 
 import { FastifyInstance } from 'fastify'
 
+// 添加自定义用户类型扩展，解决请求中user.id不存在的问题
+declare module 'fastify' {
+  interface FastifyRequest {
+    user: {
+      id: number;
+      [key: string]: any;
+    }
+  }
+}
+
 export async function messageRoutes(fastify: FastifyInstance) {
   const prisma = fastify.prisma
 
@@ -64,7 +74,11 @@ export async function messageRoutes(fastify: FastifyInstance) {
   })
 
   // 获取聊天记录
-  fastify.get('/messages/:friendId', {
+  fastify.get<{
+    Params: {
+      friendId: string;
+    }
+  }>('/messages/:friendId', {
     preValidation: [fastify.authenticate],
     handler: async (request, reply) => {
       const senderId = request.user.id

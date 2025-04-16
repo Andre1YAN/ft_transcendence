@@ -55,7 +55,11 @@ export async function render() {
     // 添加消息发送确认处理
     window.globalSocket.on('message_sent', (data: any) => {
       console.log('Message sent confirmation:', data)
-      // 可以在这里添加消息发送成功的UI反馈，比如消息已送达标记
+      // 在这里显示消息已发送确认
+      const user = JSON.parse(localStorage.getItem('user') || '{}')
+      if (user?.id) {
+        appendMessage(user.id, data.to, data.message, true, data.messageId)
+      }
     })
   }
   
@@ -322,12 +326,12 @@ async function sendMessage(receiverId: number, content: string) {
       })
     }
     
-    // 在本地立即显示消息并标记为已显示
-    appendMessage(JSON.parse(localStorage.getItem('user') || '{}').id, receiverId, content, true, messageId)
+    // 不在这里显示消息，而是等待WebSocket的message_sent事件
+    // 移除: appendMessage(JSON.parse(localStorage.getItem('user') || '{}').id, receiverId, content, true, messageId)
     
   } catch (err) {
     console.error('Failed to send message:', err)
-    // 即使请求失败，也显示消息并使用时间戳作为临时ID
+    // 请求失败时仍然显示消息，并使用时间戳作为临时ID
     const tempId = `temp-${Date.now()}`
     appendMessage(JSON.parse(localStorage.getItem('user') || '{}').id, receiverId, content, true, tempId)
   }
@@ -423,7 +427,7 @@ async function openChatWindow(userId: number, friendId: number, friendName: stri
       const content = input.value.trim()
       input.value = ''
       sendMessage(friendId, content)
-      appendMessage(userId, friendId, content, true)
+      // 移除：appendMessage(userId, friendId, content, true)
     }
   })
 

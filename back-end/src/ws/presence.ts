@@ -53,7 +53,8 @@ export async function setupPresenceSocket(fastify: FastifyInstance) {
             senderSocket.send(JSON.stringify({
               type: 'message_sent',
               to: message.to,
-              messageId: messageId
+              messageId: messageId,
+              message: message.message
             }))
           }
         }
