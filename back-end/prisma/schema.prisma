@@ -105,6 +105,7 @@ model PrivateMessage {
   receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
   receiverId Int
   content    String
+  metadata   String?  // 确保 metadata 字段存在且为可选字符串
   sentAt     DateTime @default(now())
 }
 

@@ -103,6 +103,20 @@
 	  "duplicateWarning": "玩家名称必须唯一。",
 	  "playersTitle": "参赛者",
 	  "matchStart": "开始比赛"
+	},
+	"game": {
+	  "invitation": {
+		"sent": "游戏邀请已发送",
+		"received": "游戏邀请",
+		"waiting": "等待响应中...",
+		"accept_question": "想来一局游戏吗？",
+		"accept": "接受",
+		"reject": "拒绝",
+		"accepted": "邀请已接受",
+		"rejected": "邀请已拒绝",
+		"invite_button": "邀请对战",
+		"message": "[游戏邀请]"
+	  }
 	}
   }
   
