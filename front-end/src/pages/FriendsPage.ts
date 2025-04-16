@@ -3,9 +3,10 @@
 import { initStars } from '../components/initStars'
 import { t } from '../State/i18n'
 import { renderLanguageSwitcher, bindLanguageSwitcher } from '../components/LanguageSwitcher'
+import { initGlobalSocket } from '../ws/globalSocket'
 
+// 全局变量 friends 保持不变
 let friends: { id: number; name: string; avatarUrl: string; online: boolean }[] = []
-let socket: WebSocket | null = null
 
 export async function render() {
   const user = JSON.parse(localStorage.getItem('user') || 'null')
@@ -16,10 +17,43 @@ export async function render() {
   }
 
   await fetchFriends(user.id)
+  if (!window.globalSocket && user?.id) {
+	console.log('[FriendsPage] No socket found, init manually for user', user.id)
+	window.globalSocket = initGlobalSocket(user.id)
+	}
   renderUI()
-  await setupPresenceSocket(user.id)
+  // 不再重复建立 WebSocket，本页依赖全局的 window.globalSocket（在 main.ts 中已初始化）
   bindLanguageSwitcher()
-  requestAnimationFrame(() => initStars())
+  
+  // 注册全局 WebSocket 事件回调，更新在线状态和接收聊天消息
+  const currentUser = user; // 已解析的 user 对象
+  if (window.globalSocket) {
+	// window.globalSocket.on('presence', (data: any) => {
+	// 	console.log('收到 presence 消息：', data);
+    //   // data 格式: { type: 'presence', userId: number, status: 'online' | 'offline' }
+    //   const friend = friends.find(f => f.id === data.userId)
+    //   if (friend) {
+    //     friend.online = data.status === 'online'
+    //     updateFriendStatus(friend.id, friend.online)
+    //   }
+    // })
+    window.globalSocket.on('chat', (data: any) => {
+      // data 格式: { type: 'chat', from: number, message: string }
+      const fromId = data.from
+      const message = data.message
+      if (!currentUser?.id) return
+      
+      // 如果聊天窗口未打开则延时追加消息
+      const existingBox = document.getElementById(`chat-box-${fromId}`)
+      if (!existingBox) {
+        setTimeout(() => appendMessage(currentUser.id, fromId, message, false), 300)
+      } else {
+        appendMessage(currentUser.id, fromId, message, false)
+      }
+    })
+  }
+  
+  requestAnimationFrame(() => setTimeout(() => initStars(), 0))
 }
 
 function renderUI() {
@@ -52,6 +86,7 @@ function renderUI() {
     </div>
   `
 
+  const user = JSON.parse(localStorage.getItem('user') || 'null')
   if (user?.id) {
     bindFriendEvents(user.id)
   }
@@ -73,10 +108,10 @@ function renderFriendItems(list: typeof friends) {
           </p>
         </div>
       </div>
-		<div class="flex gap-2">
-			<button class="open-chat text-blue-400 hover:text-blue-600" data-id="${friend.id}" data-name="${friend.name}" aria-label="Chat">💬</button>
-			<button class="delete-friend text-red-400 hover:text-red-600" data-id="${friend.id}" aria-label="Delete friend">✖</button>
-		</div>
+      <div class="flex gap-2">
+        <button class="open-chat text-blue-400 hover:text-blue-600" data-id="${friend.id}" data-name="${friend.name}" aria-label="Chat">💬</button>
+        <button class="delete-friend text-red-400 hover:text-red-600" data-id="${friend.id}" aria-label="Delete friend">✖</button>
+      </div>
     </div>
   `).join('')
 }
@@ -150,19 +185,18 @@ function bindFriendEvents(currentUserId: number) {
   })
 
   bindDeleteEvents(currentUserId)
-  bindChatEvents(currentUserId) 
+  bindChatEvents(currentUserId)
 }
 
 function bindChatEvents(currentUserId: number) {
-	document.querySelectorAll<HTMLButtonElement>('.open-chat').forEach(btn => {
-	  btn.addEventListener('click', async () => {
-		const friendId = Number(btn.getAttribute('data-id'))
-		const friendName = btn.getAttribute('data-name') || `User ${friendId}`
-		openChatWindow(currentUserId, friendId, friendName)
-	  })
-	})
-  }
-  
+  document.querySelectorAll<HTMLButtonElement>('.open-chat').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const friendId = Number(btn.getAttribute('data-id'))
+      const friendName = btn.getAttribute('data-name') || `User ${friendId}`
+      openChatWindow(currentUserId, friendId, friendName)
+    })
+  })
+}
 
 function bindDeleteEvents(currentUserId: number) {
   document.querySelectorAll<HTMLButtonElement>('.delete-friend').forEach(btn => {
@@ -194,8 +228,8 @@ function bindDeleteEvents(currentUserId: number) {
 async function fetchFriends(userId: number) {
   try {
     const res = await fetch(`http://localhost:3000/users/${userId}/friends`, {
-      method: "GET",
-      headers: {'Authorization': `Bearer ${localStorage.getItem('authToken')}`}
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
     })
     friends = await res.json()
 
@@ -203,7 +237,7 @@ async function fetchFriends(userId: number) {
     if (list) {
       list.innerHTML = renderFriendItems(friends)
       bindDeleteEvents(userId)
-	  bindChatEvents(userId)
+      bindChatEvents(userId)
     }
   } catch (err) {
     console.error('Error fetching friends:', err)
@@ -211,182 +245,123 @@ async function fetchFriends(userId: number) {
   }
 }
 
-function setupPresenceSocket(userId: number) {
-	try {
-	  socket = new WebSocket('ws://localhost:3000/ws/presence')
-  
-	  socket.addEventListener('open', () => {
-		// 发送上线消息
-		socket.send(JSON.stringify({ type: 'online', userId }))
-		// 可选：初次连接后短暂延时刷新好友列表
-		setTimeout(() => fetchFriends(userId), 500)
-  
-		// 每隔30秒发送一次心跳包
-		setInterval(() => {
-		  if (socket.readyState === WebSocket.OPEN) {
-			socket.send(JSON.stringify({ type: 'ping' }))
-		  }
-		}, 30000)
-	  })
-  
-	  socket.addEventListener('message', (event) => {
-		try {
-		  const data = JSON.parse(event.data)
-
-		  if (data.type === 'chat') {
-			const fromId = data.from
-			const message = data.message
-		  
-			if (!user?.id) return
-		  
-			// 如果窗口未打开，先打开窗口
-			const existingBox = document.getElementById(`chat-box-${fromId}`)
-			if (!existingBox) {
-			  setTimeout(() => appendMessage(user.id, fromId, message, false), 300)
-			} else {
-			  appendMessage(user.id, fromId, message, false)
-			}
-		  }
-
-		  
-		  if (data.type === 'presence') {
-			const friend = friends.find(f => f.id === data.userId)
-			if (friend) {
-			  friend.online = data.status === 'online'
-			  updateFriendStatus(friend.id, friend.online)
-			}
-		  }
-		} catch (err) {
-		  console.error('WebSocket message error:', err)
-		}
-	  })
-  
-	  socket.addEventListener('close', () => {
-		console.log('WebSocket closed')
-		// 若连接关闭，则3秒后重试建立连接
-		setTimeout(() => {
-		  setupPresenceSocket(userId)
-		}, 3000) // ✅ 放在回调函数的括号后面
-	  })	  
-  
-	  socket.addEventListener('error', (err) => {
-		console.error('WebSocket error:', err)
-	  })
-	} catch (err) {
-	  console.error('Failed to setup WebSocket:', err)
-	}
+// 使用全局的 window.globalSocket 来发送消息，不再重复建立 WebSocket 连接
+async function sendMessage(receiverId: number, content: string) {
+  try {
+    await fetch(`http://localhost:3000/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+      },
+      body: JSON.stringify({ receiverId, content })
+    })
+  } catch (err) {
+    console.error('Failed to send message:', err)
   }
-  
+  if (
+    window.globalSocket &&
+    window.globalSocket.getSocket() &&
+    window.globalSocket.getSocket().readyState === WebSocket.OPEN
+  ) {
+    window.globalSocket.send({
+      type: 'chat',
+      to: receiverId,
+      message: content,
+    })
+  }
+}
+
+function appendMessage(userId: number, friendId: number, text: string, isSelf: boolean) {
+  const box = document.getElementById(`chat-messages-${friendId}`)
+  if (!box) return
+  const bubble = document.createElement('div')
+  bubble.className = `
+    max-w-[75%] px-4 py-2 rounded-xl text-sm break-words
+    ${isSelf ? 'bg-gradient-to-r from-blue-500 to-blue-700 text-white ml-auto text-right' : 'bg-[#3a3a4d] text-white'}
+  `
+  bubble.textContent = text
+  box.appendChild(bubble)
+  box.scrollTop = box.scrollHeight
+}
+
+async function loadMessages(userId: number, friendId: number) {
+  try {
+    const res = await fetch(`http://localhost:3000/messages/${friendId}`, {
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+    })
+    const messages = await res.json()
+    const box = document.getElementById(`chat-messages-${friendId}`)
+    if (box) {
+      box.innerHTML = ''
+      for (const msg of messages) {
+        appendMessage(userId, friendId, msg.content, msg.senderId === userId)
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load messages:', err)
+  }
+}
 
 function updateFriendStatus(friendId: number, isOnline: boolean) {
-  const elements = document.querySelectorAll(`[data-friend-id="${friendId}"]`)
-  elements.forEach(el => {
-    const status = el.querySelector('.friend-status')
-    if (status) {
-      status.textContent = isOnline ? t('friends.online') : t('friends.offline')
-      status.className = `text-sm friend-status ${isOnline ? 'text-green-400' : 'text-gray-400'}`
+	const statusElements = document.querySelectorAll(`[data-friend-id="${friendId}"] .friend-status`);
+	statusElements.forEach(el => {
+	  el.textContent = isOnline ? t('friends.online') : t('friends.offline');
+	  el.className = `text-sm friend-status ${isOnline ? 'text-green-400' : 'text-gray-400'}`;
+	});
+  }
+
+async function openChatWindow(userId: number, friendId: number, friendName: string) {
+  const existing = document.getElementById(`chat-box-${friendId}`)
+  if (existing) return
+
+  const container = document.createElement('div')
+  container.id = `chat-box-${friendId}`
+  container.className = `
+    fixed bottom-4 right-4 w-80 bg-[#1e1e2f]/90 backdrop-blur-md
+    rounded-2xl shadow-2xl text-white z-50 flex flex-col max-h-[80vh] overflow-hidden
+  `
+  container.innerHTML = `
+    <div class="flex justify-between items-center px-4 py-2 bg-[#2a2a3d] border-b border-[#333]">
+      <span class="font-semibold text-lg">${friendName}</span>
+      <button class="close-chat text-red-400 hover:text-red-600 transition-transform transform hover:scale-125">✖</button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-3 space-y-2 text-sm" id="chat-messages-${friendId}">
+      <div class="text-center text-gray-400">Loading...</div>
+    </div>
+    <div class="p-2 border-t border-[#333] bg-[#1b1b2f]">
+      <input
+        type="text"
+        placeholder="Type a message..."
+        class="w-full px-3 py-2 rounded-xl bg-[#2a2a3d] border border-[#444] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+        id="chat-input-${friendId}"
+      >
+    </div>
+  `
+  document.body.appendChild(container)
+  container.querySelector('.close-chat')?.addEventListener('click', () => container.remove())
+
+  const input = container.querySelector(`#chat-input-${friendId}`) as HTMLInputElement
+  input.addEventListener('keypress', async (e) => {
+    if (e.key === 'Enter' && input.value.trim()) {
+      const content = input.value.trim()
+      input.value = ''
+      sendMessage(friendId, content)
+      appendMessage(userId, friendId, content, true)
     }
   })
+
+  await loadMessages(userId, friendId)
 }
+
+export function handlePresenceUpdate(data: { type: 'presence'; userId: number; status: 'online' | 'offline' }) {
+	console.log('[handlePresenceUpdate] Got presence update:', data)
   
-  async function loadMessages(userId: number, friendId: number) {
-	try {
-	  const res = await fetch(`http://localhost:3000/messages/${friendId}`, {
-		headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
-	  })
-	  const messages = await res.json()
-	  const box = document.getElementById(`chat-messages-${friendId}`)
-	  if (box) {
-		box.innerHTML = ''
-		for (const msg of messages) {
-		  appendMessage(userId, friendId, msg.content, msg.senderId === userId)
-		}
-	  }
-	} catch (err) {
-	  console.error('Failed to load messages:', err)
+	const friend = friends.find(f => f.id === data.userId)
+	if (friend) {
+	  friend.online = data.status === 'online'
+	  updateFriendStatus(friend.id, friend.online)
 	}
   }
-
-  async function openChatWindow(userId: number, friendId: number, friendName: string) {
-	const existing = document.getElementById(`chat-box-${friendId}`)
-	if (existing) return
-
-	const container = document.createElement('div')
-	container.id = `chat-box-${friendId}`
-	container.className = `
-	fixed bottom-4 right-4 w-80 bg-[#1e1e2f]/90 backdrop-blur-md
-	rounded-2xl shadow-2xl text-white z-50 flex flex-col max-h-[80vh] overflow-hidden
-  `  
-	container.innerHTML = `
-	<div class="flex justify-between items-center px-4 py-2 bg-[#2a2a3d] border-b border-[#333]">
-	  <span class="font-semibold text-lg">${friendName}</span>
-	  <button class="close-chat text-red-400 hover:text-red-600 transition-transform transform hover:scale-125">✖</button>
-	</div>
-	<div class="flex-1 overflow-y-auto p-3 space-y-2 text-sm" id="chat-messages-${friendId}">
-	  <div class="text-center text-gray-400">Loading...</div>
-	</div>
-	<div class="p-2 border-t border-[#333] bg-[#1b1b2f]">
-	  <input
-		type="text"
-		placeholder="Type a message..."
-		class="w-full px-3 py-2 rounded-xl bg-[#2a2a3d] border border-[#444] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-		id="chat-input-${friendId}"
-	  >
-	</div>
-  `
   
-	document.body.appendChild(container)
-
-	container.querySelector('.close-chat')?.addEventListener('click', () => container.remove())
-
-	const input = container.querySelector(`#chat-input-${friendId}`) as HTMLInputElement
-	input.addEventListener('keypress', async (e) => {
-	  if (e.key === 'Enter' && input.value.trim()) {
-		const content = input.value.trim()
-		input.value = ''
-		sendMessage(friendId, content)
-		appendMessage(userId, friendId, content, true)
-	  }
-	})
-
-	await loadMessages(userId, friendId)
-}
-  
-  async function sendMessage(receiverId: number, content: string) {
-	try {
-	  await fetch(`http://localhost:3000/messages`, {
-		method: 'POST',
-		headers: {
-		  'Content-Type': 'application/json',
-		  'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-		},
-		body: JSON.stringify({ receiverId, content })
-	  })
-	} catch (err) {
-	  console.error('Failed to send message:', err)
-	}
-	if (socket && socket.readyState === WebSocket.OPEN) {
-		socket.send(JSON.stringify({
-		  type: 'chat',
-		  to: receiverId,
-		  message: content,
-		}))
-	  }
-	  
-  }
-  
-  function appendMessage(userId: number, friendId: number, text: string, isSelf: boolean) {
-	const box = document.getElementById(`chat-messages-${friendId}`)
-	if (!box) return
-	const bubble = document.createElement('div')
-	bubble.className = `
-	max-w-[75%] px-4 py-2 rounded-xl text-sm break-words
-	${isSelf
-	  ? 'bg-gradient-to-r from-blue-500 to-blue-700 text-white ml-auto text-right'
-	  : 'bg-[#3a3a4d] text-white'}
-  `  
-	bubble.textContent = text
-	box.appendChild(bubble)
-	box.scrollTop = box.scrollHeight
-  }
   
