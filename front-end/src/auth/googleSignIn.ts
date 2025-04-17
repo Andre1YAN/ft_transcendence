@@ -1,23 +1,39 @@
 // src/auth/googleSignIn.ts
+
 export function initializeGoogleSignIn() {
 	const clientID = '734621834535-529ck0a42jemmd051hbkhkara8nop328.apps.googleusercontent.com';
 
-	window.google.accounts.id.initialize({
-		client_id: clientID,
-		callback: handleCredentialResponse,
-		use_fedcm_for_prompt: false
-	});
+	function tryInit() {
+		if (window.google?.accounts?.id) {
+			window.google.accounts.id.initialize({
+				client_id: clientID,
+				callback: handleCredentialResponse,
+				use_fedcm_for_prompt: false
+			});
 
-	window.google.accounts.id.renderButton(
-		document.getElementById('g_id_signin')!,
-		{ theme: 'outline', size: 'large' }
-	);
+			const btn = document.getElementById('g_id_signin');
+			if (btn) {
+				window.google.accounts.id.renderButton(btn, {
+					theme: 'outline',
+					size: 'large',
+				});
+			} else {
+				console.warn('[GoogleSignIn] Sign-in button element not found');
+			}
 
-	// ❌ 删除这行就不会触发 One Tap 弹窗了
-	// window.google.accounts.id.prompt();
+			// 如果你要使用 One Tap 弹窗的话
+			// window.google.accounts.id.prompt();
+
+			console.log('[GoogleSignIn] Google initialized ✅');
+		} else {
+			console.log('[GoogleSignIn] Google not ready, retrying in 100ms...');
+			setTimeout(tryInit, 100);
+		}
+	}
+
+	tryInit();
 }
 
-  
   // 当用户成功登录后，Google 会调用该回调，传回一个包含 ID token 的对象
   function handleCredentialResponse(response: { credential: string }) {
 	console.log('Received Google ID token:', response.credential);

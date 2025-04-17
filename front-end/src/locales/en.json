@@ -1,24 +1,24 @@
 {
 	"welcome": {
 		"title": "Welcome to 42 PONG",
-		"description": "Classic meets modern. Compete, climb the ranks, and join tournaments with your friends.",
+		"description": "A classic with a modern twist. Compete with friends, climb the ranks, and participate in tournaments.",
 		"login": "Login",
-		"register": "Register"
+		"register": "Sign Up"
 	},
 	"signup": {
-		"title": "🌟 Create Account",
+		"title": "🌟 Create an Account",
 		"google": "Sign up with Google",
 		"or": "or sign up with email",
 		"emailPlaceholder": "Email address",
 		"passwordPlaceholder": "Password",
-		"submit": "Register",
+		"submit": "Sign Up",
 		"footer": "Already have an account?",
 		"login": "Login",
 		"upload": "Upload Avatar",
-		"enable2fa": "Enable 2FA (Two-Factor Authentication)",
-		"uploadSuccess": "Avatar uploaded successfully!",
-		"uploadFail": "Failed to upload avatar"
-	  },
+		"enable2fa": "Enable Two-Factor Authentication",
+		"uploadSuccess": "Upload successful 😄",
+		"uploadFail": "Upload failed 😭"
+	},
 	"login": {
 		"title": "👋 Welcome Back",
 		"loginGoogle": "Login with Google",
@@ -26,38 +26,38 @@
 		"emailPlaceholder": "Email address",
 		"passwordPlaceholder": "Password",
 		"submit": "Login",
-		"noAccount": "Don’t have an account?",
-		"signup": "Register"
-	  },
+		"noAccount": "Don't have an account?",
+		"signup": "Sign up"
+	},
 	"navbar": {
 		"mode": "Mode",
 		"gameMode": "Game Mode",
-		"local": "Double Local",
+		"local": "Local 2-Player",
 		"tournament": "Tournament",
 		"profile": "Profile",
 		"friends": "Friends",
 		"history": "History",
-		"logout": "Log Out"
-		},
+		"logout": "Logout"
+	},
 	"main": {
 		"mode": "Mode",
 		"start": "Start Game",
-		"wins": "wins!",
-		"points": "pts",
-		"tournamentRank": "Tournament Rank", 
+		"wins": "Wins!",
+		"points": "Points",
+		"tournamentRank": "Tournament Rank",
 		"welcome": "Welcome back",
-		"description": "Ready to compete? Choose your mode and start playing!",
-		"playLocal": "Local Match",
+		"description": "Ready to compete? Choose your mode and get started!",
+		"playLocal": "Play Local",
 		"playTournament": "Tournament",
 		"recent": "Recent Activity",
 		"tip": "Check your history or challenge your friends!",
 		"tournamentMode": "Tournament Mode",
-		"tournamentPlayers": "Participants",  
+		"tournamentPlayers": "Participants",
 		"currentMatch": "Current Match",
-		"tournamentEnd": "🏁 Tournament Finished!" 
+		"tournamentEnd": "🏁 Tournament Complete!"
 	},
 	"local": {
-		"title": "Double Local Mode",
+		"title": "Local 2-Player Mode",
 		"leftWin": "Left Player Wins!",
 		"rightWin": "Right Player Wins!"
 	},
@@ -70,38 +70,52 @@
 		"update": "Update Info",
 		"historyTitle": "Match History",
 		"matchDate": "2024-04-11",
-		"matchResult": "WIN",
+		"matchResult": "Victory",
 		"back": "← Back to Game",
 		"loading": "Loading match history...",
 		"noMatches": "No matches played yet.",
-		"errorFetching": "Failed to load match history."
-	  },
+		"errorFetching": "Failed to fetch match history."
+	},
 	"history": {
 		"title": "📜 Match History",
 		"vs": "vs",
 		"winRate": "🏆 Win Rate",
 		"avgScore": "📈 Avg Score",
-		"avgLoss": "📉 Avg Loss",
+		"avgLoss": "📉 Avg Conceded",
 		"performance": "📊 Performance Overview",
 		"back": "← Back to Game",
 		"yourScore": "Your Score",
 		"opponentScore": "Opponent Score"
-	  },
+	},
 	"friends": {
 		"title": "👥 Friends",
 		"online": "● Online",
 		"offline": "● Offline",
 		"back": "← Back to Game"
-	  },
+	},
 	"tournament": {
-	"setupTitle": "Tournament Setup",
-	"addPlayer": "Add Player",
-	"start": "Start Tournament",
-	"player": "Player",
-	"modeTitle": "Tournament Mode",
-	"rank": "Tournament Rank",
-	"duplicateWarning": "Player names must be unique.",
-	"playersTitle": "Participants",         
-	"matchStart": "Start Match"       
+		"setupTitle": "Tournament Setup",
+		"addPlayer": "Add Player",
+		"start": "Start Tournament",
+		"player": "Player",
+		"modeTitle": "Tournament Mode",
+		"rank": "Tournament Rank",
+		"duplicateWarning": "Player names must be unique.",
+		"playersTitle": "Participants",         
+		"matchStart": "Start Match"       
+	},
+	"game": {
+		"invitation": {
+			"sent": "Game Invitation Sent",
+			"received": "Game Invitation",
+			"waiting": "Waiting for response...",
+			"accept_question": "Would you like to play a game?",
+			"accept": "Accept",
+			"reject": "Decline",
+			"accepted": "Invitation Accepted",
+			"rejected": "Invitation Declined",
+			"invite_button": "Invite to play",
+			"message": "[Game Invitation]"
+		}
 	}
-  }
+}

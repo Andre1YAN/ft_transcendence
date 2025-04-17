@@ -1,3 +1,5 @@
+// src/types/friend.dto.ts
+
 import { Type } from '@sinclair/typebox'
 
 export const CreateFriendSchema = Type.Object({
@@ -13,6 +15,7 @@ export interface FriendsListDto {
   name: string
   avatarUrl?: string
   online: boolean
+  blocked: boolean
 }
 
 export type CreateFriendDto = typeof CreateFriendSchema.static

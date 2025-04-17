@@ -1,7 +1,10 @@
+// src/pages/LoginPage.ts
+
 import { initStars } from '../components/initStars'
 import { t } from '../State/i18n'
 import { renderLanguageSwitcher, bindLanguageSwitcher } from '../components/LanguageSwitcher'
 import { initializeGoogleSignIn } from '../auth/googleSignIn'  // 导入 Google 初始化函数
+import { initGlobalSocket } from '../ws/globalSocket'
 
 export function render() {
   document.body.innerHTML = `
@@ -99,7 +102,10 @@ export function render() {
 	  // ✅ 否则直接登录成功
 	  localStorage.setItem('user', JSON.stringify(data.user || data)) // 兼容老结构
 	  localStorage.setItem('authToken', data.token)
-	  alert(`Welcome back, ${data.user?.displayName || data.displayName}!`)
+	  window.user = data.user || data
+		window.globalSocket = initGlobalSocket(window.user.id)
+
+		alert(`Welcome back, ${window.user.displayName || 'Player'}!`)
 	  location.hash = '#/main'
   
 	} catch (err: any) {

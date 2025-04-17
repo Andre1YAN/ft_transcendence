@@ -1,65 +1,65 @@
 {
 	"welcome": {
 	  "title": "Bienvenue sur 42 PONG",
-	  "description": "Le classique rencontre le moderne. Compétitionnez, grimpez dans les classements et rejoignez des tournois avec vos amis.",
-	  "login": "Se connecter",
-	  "register": "S'inscrire"
+	  "description": "Un mélange de classique et de moderne. Affrontez vos amis, grimpez dans les classements, participez à des tournois.",
+	  "login": "Connexion",
+	  "register": "Inscription"
 	},
 	"signup": {
 	  "title": "🌟 Créer un compte",
 	  "google": "S'inscrire avec Google",
-	  "or": "ou s'inscrire par email",
+	  "or": "ou avec un e-mail",
 	  "emailPlaceholder": "Adresse e-mail",
 	  "passwordPlaceholder": "Mot de passe",
 	  "submit": "S'inscrire",
 	  "footer": "Vous avez déjà un compte ?",
-	  "login": "Se connecter",
-	  "upload": "Téléverser un avatar",
-	  "enable2fa": "Activer l’authentification à deux facteurs",
-	  "uploadSuccess": "Avatar téléchargé avec succès !",
-	  "uploadFail": "Échec du téléchargement de l’avatar"
+	  "login": "Connexion",
+	  "upload": "Télécharger l'avatar",
+	  "enable2fa": "Activer l'authentification à deux facteurs",
+	  "uploadSuccess": "Téléchargement réussi ��",
+	  "uploadFail": "Échec du téléchargement 😭"
 	},
 	"login": {
-	  "title": "👋 Bienvenue à nouveau",
+	  "title": "👋 Bon retour",
 	  "loginGoogle": "Se connecter avec Google",
-	  "or": "ou se connecter par email",
+	  "or": "ou avec un e-mail",
 	  "emailPlaceholder": "Adresse e-mail",
 	  "passwordPlaceholder": "Mot de passe",
-	  "submit": "Se connecter",
+	  "submit": "Connexion",
 	  "noAccount": "Vous n'avez pas de compte ?",
 	  "signup": "S'inscrire"
 	},
 	"navbar": {
 	  "mode": "Mode",
 	  "gameMode": "Mode de jeu",
-	  "local": "Match local",
+	  "local": "Local 2-Joueurs",
 	  "tournament": "Tournoi",
 	  "profile": "Profil",
 	  "friends": "Amis",
 	  "history": "Historique",
-	  "logout": "Se déconnecter"
+	  "logout": "Déconnexion"
 	},
 	"main": {
 	  "mode": "Mode",
-	  "start": "Commencer le jeu",
-	  "wins": "victoires !",
-	  "points": "points",
+	  "start": "Commencer",
+	  "wins": "Victoires !",
+	  "points": "pts",
 	  "tournamentRank": "Classement du tournoi",
-	  "welcome": "Bienvenue à nouveau",
-	  "description": "Prêt à compétir ? Choisissez votre mode et commencez à jouer !",
-	  "playLocal": "Match local",
+	  "welcome": "Bienvenue",
+	  "description": "Prêt à rivaliser ? Choisissez votre mode et commencez à jouer !",
+	  "playLocal": "Match Local",
 	  "playTournament": "Tournoi",
 	  "recent": "Activité récente",
-	  "tip": "Vérifiez votre historique ou défiez vos amis !",
-	  "tournamentMode": "Mode tournoi",
+	  "tip": "Consultez votre historique ou défiez vos amis !",
+	  "tournamentMode": "Mode Tournoi",
 	  "tournamentPlayers": "Participants",
-	  "currentMatch": "Match en cours",
-	  "tournamentEnd": "🏁 Tournoi terminé !"
+	  "currentMatch": "Match actuel",
+	  "tournamentEnd": "🏁 Fin du tournoi !"
 	},
 	"local": {
-	  "title": "Mode Double Local",
-	  "leftWin": "Le joueur de gauche gagne !",
-	  "rightWin": "Le joueur de droite gagne !"
+	  "title": "Mode Local 2-Joueurs",
+	  "leftWin": "Joueur de gauche gagne !",
+	  "rightWin": "Joueur de droite gagne !"
 	},
 	"profile": {
 	  "title": "👤 Profil",
@@ -67,21 +67,21 @@
 	  "displayName": "Nom d'affichage",
 	  "wins": "Victoires",
 	  "losses": "Défaites",
-	  "update": "Mettre à jour les infos",
+	  "update": "Mettre à jour",
 	  "historyTitle": "Historique des matchs",
 	  "matchDate": "2024-04-11",
 	  "matchResult": "Victoire",
 	  "back": "← Retour au jeu",
 	  "loading": "Chargement de l'historique des matchs...",
-	  "noMatches": "Aucun match joué pour le moment.",
+	  "noMatches": "Pas encore de matchs joués.",
 	  "errorFetching": "Échec du chargement de l'historique des matchs."
 	},
 	"history": {
 	  "title": "📜 Historique des matchs",
-	  "vs": "contre",
+	  "vs": "vs",
 	  "winRate": "🏆 Taux de victoire",
 	  "avgScore": "📈 Score moyen",
-	  "avgLoss": "📉 Perte moyenne",
+	  "avgLoss": "📉 Points concédés en moyenne",
 	  "performance": "📊 Aperçu des performances",
 	  "back": "← Retour au jeu",
 	  "yourScore": "Votre score",
@@ -94,15 +94,29 @@
 	  "back": "← Retour au jeu"
 	},
 	"tournament": {
-	  "setupTitle": "Paramètres du tournoi",
+	  "setupTitle": "Configuration du tournoi",
 	  "addPlayer": "Ajouter un joueur",
-	  "start": "Commencer le tournoi",
+	  "start": "Démarrer le tournoi",
 	  "player": "Joueur",
-	  "modeTitle": "Mode tournoi",
+	  "modeTitle": "Mode Tournoi",
 	  "rank": "Classement du tournoi",
 	  "duplicateWarning": "Les noms des joueurs doivent être uniques.",
 	  "playersTitle": "Participants",
 	  "matchStart": "Commencer le match"
+	},
+	"game": {
+	  "invitation": {
+		"sent": "Invitation de jeu envoyée",
+		"received": "Invitation de jeu",
+		"waiting": "En attente de réponse...",
+		"accept_question": "Voulez-vous jouer une partie ?",
+		"accept": "Accepter",
+		"reject": "Refuser",
+		"accepted": "Invitation acceptée",
+		"rejected": "Invitation rejetée",
+		"invite_button": "Inviter à jouer",
+		"message": "[Invitation de jeu]"
+	  }
 	}
   }
   

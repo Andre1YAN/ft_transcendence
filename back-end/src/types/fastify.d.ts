@@ -6,4 +6,11 @@ declare module 'fastify' {
         authenticate: any
         prisma: PrismaClient
     }
+
+    interface FastifyRequest {
+        user: {
+            id: number
+            [key: string]: any
+        }
+    }
 }

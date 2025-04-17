@@ -1,7 +1,8 @@
+// src/components/Navbar.ts
 import { setMode } from '../State/gameState'
 import { t, getCurrentLanguage, setLanguage } from '../State/i18n'
 
-// 🔽 这里是要补的 renderNavbar 函数
+// 🔽 修改后的 renderNavbar 函数
 export function renderNavbar() {
   const currentLang = getCurrentLanguage()
   const user = JSON.parse(localStorage.getItem('user') || 'null')
@@ -119,14 +120,25 @@ export function bindNavbarEvents() {
         const tab = (e.target as HTMLElement).getAttribute('data-tab')
         if (tab) {
           if (tab === 'logout') {
-            // 登出操作：关闭 WebSocket 连接，清空本地登录信息，并跳转到登录页
-            if (window.socket && window.socket.readyState === WebSocket.OPEN) {
-              window.socket.close()  // 触发后端的关闭逻辑，从 onlineUsers 中删除
-            }
-            localStorage.removeItem('user')
-            localStorage.removeItem('authToken')
-            location.hash = '#/login'
-          } else {
+            // 登出操作：关闭全局 WebSocket 连接，清空本地登录信息，并跳转到登录页
+			if (
+				window.globalSocket &&
+				window.globalSocket.getSocket() &&
+				window.globalSocket.getSocket().readyState === WebSocket.OPEN
+			  ) {
+				window.globalSocket.send({ type: 'offline', userId: window.user?.id })
+			  }
+			  window.globalSocket?.close()
+			  
+			  localStorage.removeItem('user')
+			  localStorage.removeItem('authToken')
+			  
+			  window.user = null
+			  window.globalSocket = null
+			  
+			  location.hash = '#/login'
+			}
+			   else {
             location.hash = `#/${tab}`
           }
         }
