@@ -61,7 +61,17 @@
 	"local": {
 	  "title": "本地双人模式",
 	  "leftWin": "左侧玩家胜利！",
-	  "rightWin": "右侧玩家胜利！"
+	  "rightWin": "右侧玩家胜利！",
+	  "enterOpponent": "输入对手名称",
+	  "opponentDescription": "输入用户名查找已注册玩家，或继续使用访客模式",
+	  "opponentPlaceholder": "用户名...",
+	  "search": "搜索",
+	  "useGuest": "使用访客模式",
+	  "nameRequired": "请输入名称",
+	  "searching": "搜索中",
+	  "userFound": "已找到玩家",
+	  "userNotFound": "未找到玩家，继续使用访客模式或尝试其他名称",
+	  "searchError": "搜索玩家时出错"
 	},
 	"profile": {
 	  "title": "👤 个人资料",

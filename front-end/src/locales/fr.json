@@ -61,7 +61,17 @@
 	"local": {
 	  "title": "Mode Local 2-Joueurs",
 	  "leftWin": "Joueur de gauche gagne !",
-	  "rightWin": "Joueur de droite gagne !"
+	  "rightWin": "Joueur de droite gagne !",
+	  "enterOpponent": "Entrez le nom de l'adversaire",
+	  "opponentDescription": "Entrez un nom d'utilisateur pour trouver un joueur enregistré, ou continuez en tant qu'invité",
+	  "opponentPlaceholder": "Nom d'utilisateur...",
+	  "search": "Rechercher",
+	  "useGuest": "Continuer en tant qu'invité",
+	  "nameRequired": "Veuillez entrer un nom",
+	  "searching": "Recherche en cours",
+	  "userFound": "Joueur trouvé",
+	  "userNotFound": "Joueur non trouvé, continuez en tant qu'invité ou essayez un autre nom",
+	  "searchError": "Erreur lors de la recherche du joueur"
 	},
 	"profile": {
 	  "title": "👤 Profil",

@@ -61,7 +61,17 @@
 	"local": {
 		"title": "Local 2-Player Mode",
 		"leftWin": "Left Player Wins!",
-		"rightWin": "Right Player Wins!"
+		"rightWin": "Right Player Wins!",
+		"enterOpponent": "Enter Opponent's Name",
+		"opponentDescription": "Enter a username to find a registered player, or continue as guest",
+		"opponentPlaceholder": "Username...",
+		"search": "Search",
+		"useGuest": "Continue as Guest",
+		"nameRequired": "Please enter a name",
+		"searching": "Searching",
+		"userFound": "Player found",
+		"userNotFound": "Player not found, continue as guest or try another name",
+		"searchError": "Error searching for player"
 	},
 	"profile": {
 		"title": "👤 Profile",

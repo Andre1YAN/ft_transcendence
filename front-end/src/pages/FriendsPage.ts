@@ -501,11 +501,11 @@ async function openChatWindow(userId: number, friendId: number, friendName: stri
     <div class="flex justify-between items-center px-4 py-2 bg-[#2a2a3d] border-b border-[#333]">
       <div class="flex items-center gap-2">
         <img src="${friendAvatar}" class="w-8 h-8 rounded-full cursor-pointer friend-avatar" data-friend-id="${friendId}" alt="${friendName}" />
-        <span class="font-semibold text-lg">${friendName}</span>
+      <span class="font-semibold text-lg">${friendName}</span>
       </div>
       <div class="flex items-center">
         <button class="invite-game text-yellow-400 hover:text-yellow-600 mr-3" title="${t('game.invitation.invite_button')}">${'🎮'}</button>
-        <button class="close-chat text-red-400 hover:text-red-600 transition-transform transform hover:scale-125">✖</button>
+      <button class="close-chat text-red-400 hover:text-red-600 transition-transform transform hover:scale-125">✖</button>
       </div>
     </div>
     <div class="flex-1 overflow-y-auto p-3 space-y-2 text-sm" id="chat-messages-${friendId}">
@@ -1220,7 +1220,7 @@ function registerWebSocketEvents(currentUser: any) {
     if (!existingBox) {
       // 打开聊天窗口并显示消息
       const friend = friends.find(f => f.id === fromId);
-      if (friend) {
+	if (friend) {
         console.log(`聊天窗口未打开，开始打开窗口显示消息`);
         openChatWindow(currentUser.id, fromId, friend.name).then(() => {
           console.log(`聊天窗口已打开，现在添加消息`);
