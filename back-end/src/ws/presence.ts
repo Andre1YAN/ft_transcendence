@@ -54,6 +54,129 @@ export async function setupPresenceSocket(fastify: FastifyInstance) {
 
         console.log(`📨 接收到WebSocket消息类型: ${message.type}, 来自: ${message.userId || userId || 'unknown'}`)
 
+        // 处理频道消息
+        if (message.type === 'channel_message') {
+          if (!userId) {
+            console.log('⚠️ 频道消息被忽略：发送者未认证')
+            return
+          }
+          
+          // 验证消息格式
+          if (!message.channelId || !message.content) {
+            console.log(`⚠️ 频道消息格式无效: ${JSON.stringify(message)}`)
+            return
+          }
+          
+          const { channelId, content, localMessageId } = message
+          console.log(`📝 用户 ${userId} 发送频道消息到频道 ${channelId}${localMessageId ? `，临时ID: ${localMessageId}` : ''}`)
+          
+          try {
+            // 验证用户是否在频道中且未被禁言
+            const membership = await prisma.channelMember.findUnique({
+              where: {
+                userId_channelId: {
+                  userId,
+                  channelId
+                }
+              }
+            })
+            
+            if (!membership) {
+              console.log(`⚠️ 用户 ${userId} 不在频道 ${channelId} 中，消息被拒绝`)
+              return
+            }
+            
+            // 检查是否被禁言
+            if (membership.isMuted) {
+              if (membership.muteEndTime && membership.muteEndTime < new Date()) {
+                // 解除禁言
+                await prisma.channelMember.update({
+                  where: {
+                    userId_channelId: {
+                      userId,
+                      channelId
+                    }
+                  },
+                  data: {
+                    isMuted: false,
+                    muteEndTime: null
+                  }
+                })
+              } else {
+                console.log(`⚠️ 用户 ${userId} 在频道 ${channelId} 中被禁言，消息被拒绝`)
+                return
+              }
+            }
+            
+            // 保存消息到数据库
+            const newMessage = await prisma.channelMessage.create({
+              data: {
+                content,
+                userId,
+                channelId
+              },
+              include: {
+                user: {
+                  select: { 
+                    id: true, 
+                    displayName: true,
+                    avatarUrl: true 
+                  }
+                }
+              }
+            })
+            
+            console.log(`✅ 用户 ${userId} 的消息已保存到数据库(ID: ${newMessage.id})，正在广播给频道成员`)
+            
+            // 广播消息给所有在此频道的在线用户
+            const channelMembers = await prisma.channelMember.findMany({
+              where: { channelId },
+              select: { userId: true }
+            })
+            
+            const memberIds = channelMembers.map(m => m.userId)
+            
+            // 向频道所有在线成员广播消息
+            for (const memberId of memberIds) {
+              const memberSocket = onlineUsers.get(memberId)
+              if (memberSocket && memberSocket.readyState === 1) {
+                try {
+                  const messageData = JSON.stringify({
+                    type: 'channel_message',
+                    channelId,
+                    message: {
+                      id: newMessage.id,
+                      content: newMessage.content,
+                      createdAt: newMessage.createdAt,
+                      user: {
+                        id: newMessage.user.id,
+                        displayName: newMessage.user.displayName,
+                        avatarUrl: newMessage.user.avatarUrl
+                      }
+                    },
+                    localMessageId // 返回客户端提供的临时ID，便于客户端做消息关联
+                  })
+                  memberSocket.send(messageData)
+                  messageCounter.sent++
+                  
+                  if (memberId === userId) {
+                    console.log(`✓ 频道消息已回传给发送者 ${userId} 用于确认`)
+                  } else {
+                    console.log(`✓ 频道消息已发送给用户 ${memberId}`)
+                  }
+                } catch (err) {
+                  console.error(`发送频道消息给用户 ${memberId} 时出错:`, err)
+                }
+              }
+            }
+          } catch (err) {
+            console.error('处理频道消息时出错:', err)
+          }
+        }
+        
+        // 其他频道相关消息处理...
+        // channel_user_joined, channel_user_left, channel_user_kicked, channel_user_muted 等
+        
         // 处理聊天消息
         if (message.type === 'chat') {
           if (!userId) {
@@ -289,5 +412,78 @@ export async function setupPresenceSocket(fastify: FastifyInstance) {
     socket.on('error', (err) => {
       console.error('❌ WebSocket连接错误:', err)
     })
+
+    // 监听频道消息
+    socket.on('channel:message', async (data) => {
+      // 验证用户是否在频道中且未被禁言
+      const { channelId, content } = data;
+      
+      if (!userId) {
+        console.log('⚠️ 频道消息被忽略：发送者未认证')
+        return
+      }
+      
+      try {
+        const member = await prisma.channelMember.findUnique({
+          where: {
+            userId_channelId: { userId, channelId }
+          }
+        });
+        
+        if (!member) {
+          return socket.emit('error', { message: '您不是该频道成员' });
+        }
+        
+        // 检查是否被禁言
+        if (member.isMuted) {
+          const now = new Date();
+          if (!member.muteEndTime || member.muteEndTime > now) {
+            return socket.emit('error', { 
+              message: '您已被禁言', 
+              muteEndTime: member.muteEndTime 
+            });
+          } else {
+            // 解除禁言
+            await prisma.channelMember.update({
+              where: { id: member.id },
+              data: { isMuted: false, muteEndTime: null }
+            });
+          }
+        }
+        
+        // 保存消息
+        const message = await prisma.channelMessage.create({
+          data: {
+            content,
+            userId,
+            channelId
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                displayName: true,
+                avatarUrl: true
+              }
+            }
+          }
+        });
+        
+        // 广播消息给频道所有成员
+        const channelMembers = await prisma.channelMember.findMany({
+          where: { channelId }
+        });
+        
+        channelMembers.forEach(member => {
+          const userSocket = onlineUsers.get(member.userId);
+          if (userSocket) {
+            userSocket.emit('channel:message', message);
+          }
+        });
+      } catch (error) {
+        console.error('发送频道消息失败:', error);
+        socket.emit('error', { message: '发送消息失败' });
+      }
+    });
   })
 }

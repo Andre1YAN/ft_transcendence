@@ -43,7 +43,8 @@ export class GameCanvas {
     private players: { leftAlias: string, rightAlias: string } = {
       leftAlias: 'Player A',
       rightAlias: 'Player B'
-    }
+    },
+	public aiMode: boolean = false // ✅ 插入：支持 AI 模式
   ) {
     const canvas = document.getElementById(canvasId) as HTMLCanvasElement
     if (!canvas) throw new Error(`Canvas element with id "${canvasId}" not found`)
@@ -90,10 +91,16 @@ export class GameCanvas {
 
   private handleKeyboard() {
     document.addEventListener('keydown', (e) => {
-      if (e.key in this.keys) this.keys[e.key as keyof typeof this.keys] = true
+      if (e.key in this.keys) this.keys[e.key as keyof typeof this.keys] = true;
+	  if (['ArrowUp', 'ArrowDown'].includes(e.key)) {
+		e.preventDefault(); // 阻止默认行为，防止网页滚动 //+这个
+	  }
     })
     document.addEventListener('keyup', (e) => {
-      if (e.key in this.keys) this.keys[e.key as keyof typeof this.keys] = false
+      if (e.key in this.keys) this.keys[e.key as keyof typeof this.keys] = false;
+	  if (['ArrowUp', 'ArrowDown'].includes(e.key)) {
+		e.preventDefault(); // 阻止默认行为，防止网页滚动 ///+这个
+	  }
     })
   }
 
@@ -171,8 +178,29 @@ export class GameCanvas {
 
     if (this.keys.w && this.leftY > 0) this.leftY -= this.paddleSpeed
     if (this.keys.s && this.leftY + this.paddleHeight < this.canvas.height) this.leftY += this.paddleSpeed
-    if (this.keys.ArrowUp && this.rightY > 0) this.rightY -= this.paddleSpeed
-    if (this.keys.ArrowDown && this.rightY + this.paddleHeight < this.canvas.height) this.rightY += this.paddleSpeed
+	// AI 控制右侧球拍
+	if (this.aiMode) {
+		const paddleCenter = this.rightY + this.paddleHeight / 2
+		const ballCenter = this.ballY + this.ballSize / 2
+		const aiSpeed = this.paddleSpeed * 0.9
+	
+		if (paddleCenter < ballCenter - 10) {
+		this.rightY += aiSpeed
+		} else if (paddleCenter > ballCenter + 10) {
+		this.rightY -= aiSpeed
+		}
+	
+		// 限制 AI 球拍不超出画布边界
+		if (this.rightY < 0) {
+		this.rightY = 0
+		} else if (this.rightY + this.paddleHeight > this.canvas.height) {
+		this.rightY = this.canvas.height - this.paddleHeight
+		}
+	} else {
+		// 玩家控制右侧球拍
+		if (this.keys.ArrowUp && this.rightY > 0) this.rightY -= this.paddleSpeed
+		if (this.keys.ArrowDown && this.rightY + this.paddleHeight < this.canvas.height) this.rightY += this.paddleSpeed
+	}
   }
 
   private draw() {

@@ -29,9 +29,9 @@ export async function render() {
 
   await fetchFriends(user.id)
   if (!window.globalSocket && user?.id) {
-    console.log('[FriendsPage] No socket found, init manually for user', user.id)
-    window.globalSocket = initGlobalSocket(user.id)
-  }
+	console.log('[FriendsPage] No socket found, init manually for user', user.id)
+	window.globalSocket = initGlobalSocket(user.id)
+	}
   renderUI()
   bindLanguageSwitcher()
   
@@ -462,18 +462,18 @@ async function loadMessages(userId: number, friendId: number) {
 function updateFriendStatus(friendId: number, isOnline: boolean) {
   console.log(`[updateFriendStatus] 更新好友 ${friendId} 的状态为 ${isOnline ? '在线' : '离线'}`);
   
-  const statusElements = document.querySelectorAll(`[data-friend-id="${friendId}"] .friend-status`);
+	const statusElements = document.querySelectorAll(`[data-friend-id="${friendId}"] .friend-status`);
   console.log(`[updateFriendStatus] 找到 ${statusElements.length} 个状态元素需要更新`);
   
-  statusElements.forEach(el => {
-    el.textContent = isOnline ? t('friends.online') : t('friends.offline');
-    el.className = `text-sm friend-status ${isOnline ? 'text-green-400' : 'text-gray-400'}`;
-  });
+	statusElements.forEach(el => {
+	  el.textContent = isOnline ? t('friends.online') : t('friends.offline');
+	  el.className = `text-sm friend-status ${isOnline ? 'text-green-400' : 'text-gray-400'}`;
+	});
   
   if (statusElements.length === 0) {
     console.warn(`[updateFriendStatus] 未找到好友 ${friendId} 的状态元素`);
   }
-}
+  }
 
 // 修改聊天窗口打开函数，确保正确初始化
 async function openChatWindow(userId: number, friendId: number, friendName: string) {
@@ -489,29 +489,29 @@ async function openChatWindow(userId: number, friendId: number, friendName: stri
 
       const container = document.createElement('div');
       container.id = `chat-box-${friendId}`;
-      container.className = `
-        fixed bottom-4 right-4 w-80 bg-[#1e1e2f]/90 backdrop-blur-md
-        rounded-2xl shadow-2xl text-white z-50 flex flex-col max-h-[80vh] overflow-hidden
+  container.className = `
+    fixed bottom-4 right-4 w-80 bg-[#1e1e2f]/90 backdrop-blur-md
+    rounded-2xl shadow-2xl text-white z-50 flex flex-col max-h-[80vh] overflow-hidden
       `;
-      container.innerHTML = `
-        <div class="flex justify-between items-center px-4 py-2 bg-[#2a2a3d] border-b border-[#333]">
-          <span class="font-semibold text-lg">${friendName}</span>
+  container.innerHTML = `
+    <div class="flex justify-between items-center px-4 py-2 bg-[#2a2a3d] border-b border-[#333]">
+      <span class="font-semibold text-lg">${friendName}</span>
           <div class="flex items-center">
             <button class="invite-game text-yellow-400 hover:text-yellow-600 mr-3" title="${t('game.invitation.invite_button')}">${'🎮'}</button>
-            <button class="close-chat text-red-400 hover:text-red-600 transition-transform transform hover:scale-125">✖</button>
+      <button class="close-chat text-red-400 hover:text-red-600 transition-transform transform hover:scale-125">✖</button>
           </div>
-        </div>
-        <div class="flex-1 overflow-y-auto p-3 space-y-2 text-sm" id="chat-messages-${friendId}">
-          <div class="text-center text-gray-400">Loading...</div>
-        </div>
-        <div class="p-2 border-t border-[#333] bg-[#1b1b2f]">
-          <input
-            type="text"
-            placeholder="Type a message..."
-            class="w-full px-3 py-2 rounded-xl bg-[#2a2a3d] border border-[#444] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-            id="chat-input-${friendId}"
-          >
-        </div>
+    </div>
+    <div class="flex-1 overflow-y-auto p-3 space-y-2 text-sm" id="chat-messages-${friendId}">
+      <div class="text-center text-gray-400">Loading...</div>
+    </div>
+    <div class="p-2 border-t border-[#333] bg-[#1b1b2f]">
+      <input
+        type="text"
+        placeholder="Type a message..."
+        class="w-full px-3 py-2 rounded-xl bg-[#2a2a3d] border border-[#444] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+        id="chat-input-${friendId}"
+      >
+    </div>
       `;
       document.body.appendChild(container);
       console.log(`聊天窗口DOM已创建，id: chat-box-${friendId}`);
@@ -536,8 +536,8 @@ async function openChatWindow(userId: number, friendId: number, friendName: stri
 
       const input = container.querySelector(`#chat-input-${friendId}`) as HTMLInputElement;
       if (input) {
-        input.addEventListener('keypress', async (e) => {
-          if (e.key === 'Enter' && input.value.trim()) {
+  input.addEventListener('keypress', async (e) => {
+    if (e.key === 'Enter' && input.value.trim()) {
             const content = input.value.trim();
             input.value = ''; // 清空输入框
             console.log(`发送消息到聊天窗口: ${friendId}, 内容: ${content}`);
@@ -1102,7 +1102,7 @@ function registerWebSocketEvents(currentUser: any) {
     if (!existingBox) {
       // 获取好友名字
       const friend = friends.find(f => f.id === fromId);
-      if (friend) {
+	if (friend) {
         console.log(`打开与好友 ${friend.name} 的聊天窗口并显示游戏邀请`);
         openChatWindow(currentUser.id, fromId, friend.name).then(() => {
           // 聊天窗口打开后显示邀请
@@ -1160,6 +1160,6 @@ function registerWebSocketEvents(currentUser: any) {
   function handleGameInvitationSent(data: any) {
     console.log('游戏邀请已送达确认:', data)
     // 可以在这里添加额外的UI反馈
+	}
   }
-}
   

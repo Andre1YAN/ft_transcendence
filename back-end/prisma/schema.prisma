@@ -51,6 +51,9 @@ model User {
 
   blocks    BlockedUser[] @relation("Blocker")
   blockedBy BlockedUser[] @relation("Blocked")
+
+  channelMembers    ChannelMember[]
+  channelMessages   ChannelMessage[]
 }
 
 model Friend {
@@ -121,4 +124,46 @@ model BlockedUser {
   @@unique([blockerId, blockedId])
   @@index([blockerId])
   @@index([blockedId])
+}
+
+model Channel {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  description String?
+  isPrivate   Boolean      @default(false)
+  password    String?      // 加密频道密码(hash值)
+  createdAt   DateTime     @default(now())
+  
+  // 关联
+  members     ChannelMember[]
+  messages    ChannelMessage[]
+}
+
+model ChannelMember {
+  id          Int         @id @default(autoincrement())
+  userId      Int
+  channelId   String
+  displayName String      // 用户在频道中的显示名
+  isAdmin     Boolean     @default(false)
+  isMuted     Boolean     @default(false)
+  muteEndTime DateTime?
+  joinedAt    DateTime    @default(now())
+  
+  // 关联
+  user        User        @relation(fields: [userId], references: [id])
+  channel     Channel     @relation(fields: [channelId], references: [id])
+  
+  @@unique([userId, channelId])
+}
+
+model ChannelMessage {
+  id          Int         @id @default(autoincrement())
+  content     String
+  createdAt   DateTime    @default(now())
+  userId      Int
+  channelId   String
+  
+  // 关联
+  user        User        @relation(fields: [userId], references: [id])
+  channel     Channel     @relation(fields: [channelId], references: [id])
 }

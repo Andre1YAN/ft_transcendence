@@ -11,6 +11,7 @@ const routes: Record<string, string> = {
 	'/tournament': 'TournamentPage',
 	'/tournament_setup': 'TournamentSetupPage',
 	'/2fa': 'TwoFA',
+	'/ai_game': 'AIGamePage'
   }  
   
   export function initRouter() {
