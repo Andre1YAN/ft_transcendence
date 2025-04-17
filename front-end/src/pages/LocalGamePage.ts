@@ -59,23 +59,27 @@ export function render() {
 	  winnerEl.textContent = `${winnerAlias} ${t('main.wins')}`
   
 	  try {
+		const matchData = {
+		  user1Id: user?.id,
+		  user2Id: 1,
+		  score1: leftScore,
+		  score2: rightScore,
+		  matchType: "NORMAL"
+		};
+		console.log('发送的比赛数据:', matchData);
+		
 		const res = await fetch('http://localhost:3000/users/matches', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('authToken')}`},
-			body: JSON.stringify({
-			  user1Id: user?.id ?? 1, //为什么默认default值为1？？
-			  user2Id: 999,
-			  score1: leftScore,
-			  score2: rightScore
-			})
-		  })
-		  
-		  if (!res.ok) {
-			const error = await res.json()
-			console.error('❌ Failed to save match:', error)
-		  } else {
-			console.log('✅ Match saved!')
-		  }		  
+		  method: 'POST',
+		  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('authToken')}`},
+		  body: JSON.stringify(matchData)
+		})
+		
+		if (!res.ok) {
+		  const error = await res.json()
+		  console.error('❌ Failed to save match:', error)
+		} else {
+		  console.log('✅ Match saved!')
+		}		  
 	  } catch (err) {
 		console.error('❌ Failed to save match:', err)
 	  }

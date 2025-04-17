@@ -57,18 +57,23 @@ export function render() {
       winnerEl.textContent = `${winnerAlias} ${t('main.wins')}`
 
       try {
+        // 记录发送的数据，方便调试
+        const matchData = {
+          user1Id: user?.id,
+          user2Id: 1, // 改为使用ID为1的用户而不是999
+          score1: leftScore,
+          score2: rightScore,
+          matchType: "NORMAL" // 明确指定matchType字段
+        };
+        console.log('发送的比赛数据:', matchData);
+        
         const res = await fetch('http://localhost:3000/users/matches', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('authToken')}`
           },
-          body: JSON.stringify({
-            user1Id: user?.id ?? 1,
-            user2Id: 999,
-            score1: leftScore,
-            score2: rightScore
-          })
+          body: JSON.stringify(matchData)
         })
 
         if (!res.ok) {

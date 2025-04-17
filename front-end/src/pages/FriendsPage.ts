@@ -487,6 +487,10 @@ async function openChatWindow(userId: number, friendId: number, friendName: stri
         return;
       }
 
+      // 获取好友数据以获取头像
+      const friend = friends.find(f => f.id === friendId);
+      const friendAvatar = friend?.avatarUrl || `https://i.pravatar.cc/40?u=${friendId}`;
+
       const container = document.createElement('div');
       container.id = `chat-box-${friendId}`;
   container.className = `
@@ -495,11 +499,14 @@ async function openChatWindow(userId: number, friendId: number, friendName: stri
       `;
   container.innerHTML = `
     <div class="flex justify-between items-center px-4 py-2 bg-[#2a2a3d] border-b border-[#333]">
-      <span class="font-semibold text-lg">${friendName}</span>
-          <div class="flex items-center">
-            <button class="invite-game text-yellow-400 hover:text-yellow-600 mr-3" title="${t('game.invitation.invite_button')}">${'🎮'}</button>
-      <button class="close-chat text-red-400 hover:text-red-600 transition-transform transform hover:scale-125">✖</button>
-          </div>
+      <div class="flex items-center gap-2">
+        <img src="${friendAvatar}" class="w-8 h-8 rounded-full cursor-pointer friend-avatar" data-friend-id="${friendId}" alt="${friendName}" />
+        <span class="font-semibold text-lg">${friendName}</span>
+      </div>
+      <div class="flex items-center">
+        <button class="invite-game text-yellow-400 hover:text-yellow-600 mr-3" title="${t('game.invitation.invite_button')}">${'🎮'}</button>
+        <button class="close-chat text-red-400 hover:text-red-600 transition-transform transform hover:scale-125">✖</button>
+      </div>
     </div>
     <div class="flex-1 overflow-y-auto p-3 space-y-2 text-sm" id="chat-messages-${friendId}">
       <div class="text-center text-gray-400">Loading...</div>
@@ -522,6 +529,14 @@ async function openChatWindow(userId: number, friendId: number, friendName: stri
         closeButton.addEventListener('click', () => {
           console.log(`关闭聊天窗口`);
           container.remove();
+        });
+      }
+      
+      // 添加头像点击事件
+      const avatarElement = container.querySelector('.friend-avatar');
+      if (avatarElement) {
+        avatarElement.addEventListener('click', () => {
+          showFriendProfile(friendId, friendName, friendAvatar);
         });
       }
       
@@ -568,6 +583,188 @@ async function openChatWindow(userId: number, friendId: number, friendName: stri
       reject(err);
     }
   });
+}
+
+// 添加显示好友资料卡片的函数
+function showFriendProfile(friendId: number, friendName: string, avatarUrl: string) {
+  // 检查是否已经有显示的资料卡片，如果有，先移除
+  const existingProfile = document.getElementById('friend-profile-card');
+  if (existingProfile) {
+    existingProfile.remove();
+  }
+
+  // 从friends数组中获取完整的好友信息
+  const friend = friends.find(f => f.id === friendId);
+  
+  // 创建资料卡片
+  const profileCard = document.createElement('div');
+  profileCard.id = 'friend-profile-card';
+  profileCard.className = `
+    fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2
+    w-96 bg-[#2a2a3d] rounded-xl shadow-2xl z-[60] p-6 border border-indigo-500/30
+    flex flex-col items-center gap-3 backdrop-blur-md max-h-[90vh] overflow-y-auto
+  `;
+  
+  // 初始内容
+  profileCard.innerHTML = `
+    <div class="absolute top-3 right-3">
+      <button id="close-profile" class="text-gray-400 hover:text-red-400">✖</button>
+    </div>
+    
+    <div class="flex flex-col items-center w-full">
+      <img src="${avatarUrl}" class="w-24 h-24 rounded-full border-2 border-indigo-500 mb-3" alt="${friendName}" />
+      <h3 class="text-xl font-bold text-white">${friendName}</h3>
+      <div class="text-sm ${friend?.online ? 'text-green-400' : 'text-gray-400'} mb-4">
+        ${friend?.online ? t('friends.online') : t('friends.offline')}
+      </div>
+      
+      <!-- 游戏统计 -->
+      <div class="w-full bg-[#1b1b2f] rounded-lg p-4 mb-4">
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-gray-300">${t('profile.wins')}</span>
+          <span id="friend-wins" class="text-lg font-bold text-green-400">-</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-gray-300">${t('profile.losses')}</span>
+          <span id="friend-losses" class="text-lg font-bold text-red-400">-</span>
+        </div>
+      </div>
+      
+      <!-- 比赛历史 -->
+      <h4 class="text-md font-bold text-white self-start mb-2">${t('profile.historyTitle')}</h4>
+      <div id="friend-match-history" class="w-full bg-[#1b1b2f] rounded-lg p-3 max-h-60 overflow-y-auto">
+        <p class="text-center text-gray-400">${t('profile.loading')}</p>
+      </div>
+    </div>
+    
+    <div class="w-full border-t border-gray-600 my-3"></div>
+    <div class="flex justify-center gap-4 w-full">
+      <button id="profile-chat" class="bg-blue-500 hover:bg-blue-600 px-4 py-2 rounded-md text-white text-sm">
+        💬 ${t('friends.chat')}
+      </button>
+      <button id="profile-invite" class="bg-yellow-500 hover:bg-yellow-600 px-4 py-2 rounded-md text-white text-sm">
+        🎮 ${t('game.invitation.invite_button')}
+      </button>
+    </div>
+  `;
+  
+  // 添加到页面
+  document.body.appendChild(profileCard);
+  
+  // 绑定关闭按钮事件
+  document.getElementById('close-profile')?.addEventListener('click', () => {
+    profileCard.remove();
+  });
+  
+  // 绑定聊天按钮事件
+  document.getElementById('profile-chat')?.addEventListener('click', () => {
+    profileCard.remove();
+    const existingChat = document.getElementById(`chat-box-${friendId}`);
+    if (!existingChat) {
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      if (currentUser?.id) {
+        openChatWindow(currentUser.id, friendId, friendName);
+      }
+    }
+  });
+  
+  // 绑定邀请游戏按钮事件
+  document.getElementById('profile-invite')?.addEventListener('click', () => {
+    profileCard.remove();
+    sendGameInvitation(friendId, friendName);
+  });
+  
+  // 点击其他地方关闭资料卡片
+  const overlay = document.createElement('div');
+  overlay.className = 'fixed inset-0 z-[59]';
+  document.body.appendChild(overlay);
+  
+  overlay.addEventListener('click', () => {
+    profileCard.remove();
+    overlay.remove();
+  });
+  
+  // 加载好友的比赛记录
+  fetchFriendMatchHistory(friendId);
+}
+
+// 获取好友的比赛记录
+async function fetchFriendMatchHistory(friendId: number) {
+  try {
+    const res = await fetch(`http://localhost:3000/users/${friendId}/matches`, {
+      method: "GET",
+      headers: {'Authorization': `Bearer ${localStorage.getItem('authToken')}`}
+    });
+    
+    const matches = await res.json();
+    
+    // 更新胜负场数
+    let wins = 0;
+    let losses = 0;
+    
+    // 当前用户信息（用于比较比赛结果）
+    const friend = friends.find(f => f.id === friendId);
+    
+    if (Array.isArray(matches)) {
+      matches.forEach((match) => {
+        const isUser1 = match.user1.id === friendId;
+        const myScore = isUser1 ? match.score1 : match.score2;
+        const oppScore = isUser1 ? match.score2 : match.score1;
+        if (myScore > oppScore) wins++;
+        else losses++;
+      });
+      
+      // 更新UI
+      const winsElement = document.getElementById('friend-wins');
+      const lossesElement = document.getElementById('friend-losses');
+      
+      if (winsElement) winsElement.textContent = String(wins);
+      if (lossesElement) lossesElement.textContent = String(losses);
+      
+      // 更新比赛历史
+      const historyContainer = document.getElementById('friend-match-history');
+      if (historyContainer) {
+        if (matches.length === 0) {
+          historyContainer.innerHTML = `<p class="text-center text-gray-400">${t('profile.noMatches')}</p>`;
+        } else {
+          historyContainer.innerHTML = matches.map((match: any) => {
+            const isUser1 = match.user1.id === friendId;
+            const isWin = isUser1 ? match.score1 > match.score2 : match.score2 > match.score1;
+            
+            const opponent = isUser1 ? match.user2 : match.user1;
+            
+            return `
+              <div class="flex justify-between items-center border-b border-white/10 pb-2 mb-2">
+                <div class="flex items-center gap-2">
+                  <img class="w-6 h-6 rounded-full" src="${opponent.avatarUrl}" />
+                  <span class="text-sm">${opponent.displayName}</span>
+                </div>
+                <div class="text-right">
+                  <p class="text-xs text-white/40">${new Date(match.playedAt).toLocaleDateString()}</p>
+                  <p class="text-sm font-bold ${isWin ? 'text-green-400' : 'text-red-400'}">
+                    ${match.score1} : ${match.score2}
+                  </p>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+    }
+  } catch (err) {
+    console.error('获取好友比赛记录失败:', err);
+    
+    // 更新UI显示错误
+    const winsElement = document.getElementById('friend-wins');
+    const lossesElement = document.getElementById('friend-losses');
+    const historyContainer = document.getElementById('friend-match-history');
+    
+    if (winsElement) winsElement.textContent = '-';
+    if (lossesElement) lossesElement.textContent = '-';
+    if (historyContainer) {
+      historyContainer.innerHTML = `<p class="text-center text-red-400">${t('profile.errorFetching')}</p>`;
+    }
+  }
 }
 
 export function handlePresenceUpdate(data: any) {
