@@ -3,52 +3,107 @@ import { renderNavbar, bindNavbarEvents } from '../components/Navbar'
 import { initStars } from '../components/initStars'
 import { t } from '../State/i18n'
 
+// 在所有游戏页面的初始化代码开头处添加以下代码
+// 通常位于DOMContentLoaded事件处理函数的开始
+
+// 在页面加载时清理任何可能存在的游戏实例和UI
+GameCanvas.cleanup();
+
+// 确保比分显示为零
+GameCanvas.resetAllScores();
+
 export function render() {
   let game: GameCanvas | null = null
   const user = JSON.parse(localStorage.getItem('user') || 'null')
   const playerAlias = user?.displayName || 'You'
 
-  // 初始化为默认Guest用户
-  let guestAlias = 'Guest'
-  let guestUser = { id: 1, displayName: 'Guest', avatarUrl: 'https://i.pravatar.cc/40?u=guest' }
+  // 初始化为默认Guest用户ID
+  const defaultGuestId = 1;
+  let guestAlias = 'Guest User'
+  let guestUser = { id: defaultGuestId, displayName: 'Guest User', avatarUrl: 'https://api.dicebear.com/7.x/personas/svg?seed=guest&backgroundColor=b6e3f4' }
+
+  // 向后端验证Guest用户ID
+  async function verifyGuestUserId() {
+    try {
+      // 取消前面添加的注释，修改邮箱地址
+      const response = await fetch('http://localhost:3000/users/special?email=guest@fake.com', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.id) {
+          console.log('✅ Verified Guest User ID:', data.id);
+          return {
+            id: data.id,
+            displayName: data.displayName || 'Guest User',
+            avatarUrl: data.avatarUrl || 'https://api.dicebear.com/7.x/personas/svg?seed=guest&backgroundColor=b6e3f4'
+          };
+        }
+      }
+    } catch (err) {
+      console.error('⚠️ Could not verify Guest User ID, using default:', err);
+    }
+    return guestUser; // 失败时返回默认用户信息
+  }
 
   document.body.innerHTML = `
     <div class="relative z-0 min-h-screen bg-gradient-to-b from-[#1e1e2f] to-[#10101a] px-6 pt-6 font-sans">
       <canvas id="smoke-bg" class="fixed inset-0 w-full h-full -z-10 pointer-events-none"></canvas>
       ${renderNavbar()}
 
-      <div class="text-center text-xl md:text-2xl text-blue-200 font-press tracking-widest mb-4">
-        🎮 ${t('local.title')}
+      <div class="flex flex-col items-center">
+        <div class="text-center text-xl md:text-3xl text-blue-200 font-press tracking-widest mb-4 glow-text">
+          🎮 ${t('local.title')}
+        </div>
+        
+        <div class="w-full max-w-[800px] mx-auto bg-black/30 backdrop-blur-sm rounded-xl p-4 shadow-2xl border border-indigo-500/20 mb-6">
+          <div class="flex flex-col items-center mb-2">
+            <div class="flex justify-center items-center gap-6 mb-2">
+              <!-- 玩家信息 -->
+              <div class="flex flex-col items-center">
+                <img src="${user?.avatarUrl || 'https://api.dicebear.com/7.x/pixel-art/svg?seed=default'}" 
+                     class="w-12 h-12 rounded-full border-2 border-blue-400 shadow-glow" alt="player" />
+                <span class="text-blue-200 text-sm mt-1 font-press">${playerAlias}</span>
+              </div>
+              
+              <!-- 比分信息 -->
+              <div class="flex items-center gap-2 bg-[#1b1b2f] px-6 py-2 rounded-lg border border-indigo-400/20">
+                <span id="leftScore" class="text-3xl font-bold text-blue-300 font-press">0</span>
+                <span class="mx-2 text-2xl text-gray-400">:</span>
+                <span id="rightScore" class="text-3xl font-bold text-green-300 font-press">0</span>
+              </div>
+              
+              <!-- 对手信息 -->
+              <div class="flex flex-col items-center">
+                <img id="guestAvatar" src="https://api.dicebear.com/7.x/personas/svg?seed=guest&backgroundColor=b6e3f4" 
+                     class="w-12 h-12 rounded-full border-2 border-green-400 shadow-glow" alt="guest" />
+                <span id="guestName" class="text-green-200 text-sm mt-1 font-press">${guestAlias}</span>
+              </div>
+            </div>
+            
+            <div id="winner" class="mt-2 text-yellow-500 text-base font-press glow-text-sm"></div>
+          </div>
+
+          <div class="flex justify-center">
+            <canvas
+              id="gameCanvas"
+              class="w-full aspect-[16/10] bg-black shadow-inner rounded-lg border border-indigo-500/20"
+            ></canvas>
+          </div>
+        </div>
+
+        <div class="text-center mt-4 flex justify-center items-center gap-4">
+          <button id="startBtn" class="glow-pulse px-8 py-3 text-sm text-blue-200 font-press tracking-widest border border-blue-400 rounded-full bg-black/30 backdrop-blur-sm transition hover:bg-blue-900/30">
+            ✨ ${t('main.start')}
+          </button>
+          <button id="pauseBtn" class="hidden px-8 py-3 text-sm text-yellow-200 font-press tracking-widest border border-yellow-400 rounded-full bg-black/30 backdrop-blur-sm transition hover:bg-yellow-900/30">
+            ⏸️ ${t('main.pause')}
+          </button>
+        </div>
       </div>
-
-	<div class="flex flex-col items-center text-2xl font-bold text-blue-200 font-press tracking-widest mb-4">
-	<div class="flex justify-center items-center gap-4">
-		<img src="${user?.avatarUrl || 'https://i.pravatar.cc/40?u=guest'}" class="w-10 h-10 rounded-full" alt="player" />
-		<span id="leftScore">0</span>
-		<span class="mx-2">:</span>
-		<span id="rightScore">0</span>
-		<img id="guestAvatar" src="https://i.pravatar.cc/40?u=guest" class="w-10 h-10 rounded-full" alt="guest" />
-	</div>
-	<div id="winner" class="mt-2 text-yellow-500 text-base font-press"></div>
-	</div>
-
-
-      <div class="flex justify-center">
-        <canvas
-          id="gameCanvas"
-          class="w-full max-w-[800px] aspect-[16/10] bg-black shadow-2xl rounded-lg"
-        ></canvas>
-      </div>
-
-      <div class="text-center mt-6">
-        <button id="startBtn" class="glow-pulse px-8 py-3 text-sm text-blue-200 font-press tracking-widest border border-blue-400 rounded-full bg-black/30 backdrop-blur-sm transition">
-          ✨ ${t('main.start')}
-        </button>
-      </div>
-    </div>
 
     <!-- 对手信息弹窗 -->
-    <div id="opponentModal" class="fixed inset-0 flex items-center justify-center z-50 bg-black/70">
+    <div id="opponentModal" class="fixed inset-0 flex items-center justify-center z-50 bg-black/90 backdrop-blur-lg">
       <div class="bg-[#2a2a3d] rounded-xl p-6 w-80 shadow-2xl border border-indigo-500/30">
         <h3 class="text-xl text-white font-bold mb-4 text-center">${t('local.enterOpponent')}</h3>
         <p class="text-gray-300 text-sm mb-4 text-center">${t('local.opponentDescription')}</p>
@@ -75,6 +130,18 @@ export function render() {
         </div>
       </div>
     </div>
+    
+    <style>
+      .shadow-glow {
+        box-shadow: 0 0 10px rgba(99, 102, 241, 0.4);
+      }
+      .glow-text {
+        text-shadow: 0 0 10px rgba(191, 219, 254, 0.6);
+      }
+      .glow-text-sm {
+        text-shadow: 0 0 8px rgba(250, 204, 21, 0.7);
+      }
+    </style>
   `
 
   bindNavbarEvents()
@@ -88,7 +155,24 @@ export function render() {
   setupOpponentModal()
 
   // 初始化游戏画布
-  function initializeGame() {
+  async function initializeGame() {
+    // 在游戏初始化前获取并验证guest用户信息
+    if (guestUser.id === defaultGuestId) {
+      guestUser = await verifyGuestUserId();
+      // 更新UI中的guest用户信息
+      const guestAvatarImg = document.getElementById('guestAvatar') as HTMLImageElement;
+      const guestNameElem = document.getElementById('guestName');
+      
+      if (guestAvatarImg && guestUser.avatarUrl) {
+        guestAvatarImg.src = guestUser.avatarUrl;
+      }
+      
+      if (guestNameElem && guestUser.displayName) {
+        guestNameElem.textContent = guestUser.displayName;
+        guestAlias = guestUser.displayName;
+      }
+    }
+
     // ✅ 初始化 GameCanvas，传入玩家别名
     game = new GameCanvas(
       'gameCanvas',
@@ -96,6 +180,7 @@ export function render() {
         winnerEl.textContent = `${winnerAlias} ${t('main.wins')}`
 
         try {
+          // 使用验证后的guest用户ID
           const matchData = {
             user1Id: user?.id ?? 1,
             user2Id: guestUser.id,
@@ -103,7 +188,7 @@ export function render() {
             score2: rightScore,
             matchType: "NORMAL"
           };
-          console.log('发送的比赛数据:', matchData);
+          console.log('Match data to send:', matchData);
           
           const res = await fetch('http://localhost:3000/users/matches', {
             method: 'POST',
@@ -127,6 +212,29 @@ export function render() {
         rightAlias: guestAlias
       }  
     )
+    
+    // 启用暂停按钮
+    const pauseBtn = document.getElementById('pauseBtn') as HTMLButtonElement;
+    pauseBtn.classList.remove('hidden');
+    // 确保按钮文本显示为暂停图标，因为游戏初始时未运行
+    pauseBtn.innerHTML = `⏸️ ${t('main.pause')}`;
+    
+    // 绑定暂停按钮事件
+    pauseBtn.addEventListener('click', () => {
+      if (game) {
+        const isPaused = game.togglePause();
+        // 根据暂停状态更新按钮文本
+        pauseBtn.innerHTML = isPaused 
+          ? `▶️ ${t('main.resume')}` 
+          : `⏸️ ${t('main.pause')}`;
+      }
+    });
+    
+    // 监听键盘事件提示
+    const infoText = document.createElement('div');
+    infoText.className = 'text-center text-gray-400 text-sm mt-2';
+    infoText.textContent = `${t('main.pauseHint')}`;
+    pauseBtn.parentNode?.appendChild(infoText);
   }
 
   startBtn.addEventListener('click', () => {
@@ -183,12 +291,22 @@ export function render() {
             </div>
           `
           
-          // 3秒后关闭弹窗
+          // 1.5秒后关闭弹窗
           setTimeout(() => {
             modal.classList.add('hidden')
             const guestAvatarImg = document.getElementById('guestAvatar') as HTMLImageElement;
+            const guestNameElem = document.getElementById('guestName');
+            
             if (guestAvatarImg) {
-              guestAvatarImg.src = data.avatarUrl;
+              guestAvatarImg.src = data.avatarUrl || 'https://api.dicebear.com/7.x/personas/svg?seed=guest&backgroundColor=b6e3f4';
+              guestAvatarImg.classList.remove('border-green-400');
+              guestAvatarImg.classList.add('border-purple-400');
+            }
+            
+            if (guestNameElem) {
+              guestNameElem.textContent = data.displayName;
+              guestNameElem.classList.remove('text-green-200');
+              guestNameElem.classList.add('text-purple-200');
             }
             
             // 初始化游戏
@@ -205,10 +323,10 @@ export function render() {
     })
     
     // 使用默认Guest
-    continueAsGuestButton.addEventListener('click', () => {
+    continueAsGuestButton.addEventListener('click', async () => {
       modal.classList.add('hidden')
       // 初始化游戏
-      initializeGame()
+      await initializeGame()
     })
     
     // 按Enter键也触发搜索

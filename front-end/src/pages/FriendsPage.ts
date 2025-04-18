@@ -703,7 +703,6 @@ async function fetchFriendMatchHistory(friendId: number) {
     let losses = 0;
     
     // 当前用户信息（用于比较比赛结果）
-    const friend = friends.find(f => f.id === friendId);
     
     if (Array.isArray(matches)) {
       matches.forEach((match) => {
@@ -851,11 +850,6 @@ async function sendGameInvitation(friendId: number, friendName: string) {
       };
       
       // 设置超时处理
-      const timeoutId = setTimeout(() => {
-        console.log('游戏邀请发送超时');
-        window.globalSocket?.off('game_invitation_sent', confirmHandler);
-        resolve(false);
-      }, 5000);
       
       // 注册一次性确认处理器
       window.globalSocket?.on('game_invitation_sent', confirmHandler);
@@ -1282,7 +1276,6 @@ function registerWebSocketEvents(currentUser: any) {
   function handleGameInvitation(data: any) {
     console.log('收到游戏邀请:', data);
     const fromId = data.from;
-    const fromName = data.fromName;
     const invitationId = data.invitationId;
     
     if (fromId === currentUser.id) {

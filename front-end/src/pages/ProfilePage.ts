@@ -121,12 +121,20 @@ document.getElementById('losses')!.textContent = String(losses)
 	  : match.score2 > match.score1
 
 	const opponent = match.user1.id === user.id ? match.user2 : match.user1
+    
+	// 添加特殊用户样式
+	let opponentClass = '';
+	if (opponent.email === 'ai@fake.com') {
+	  opponentClass = 'text-red-400 font-bold';
+	} else if (opponent.email === 'guest@fake.com') {
+	  opponentClass = 'text-green-400 font-bold';
+	}
 
 	return `
 	  <div class="flex justify-between items-center border-b border-white/10 pb-2">
 		<div class="flex items-center gap-2">
 		  <img class="w-8 h-8 rounded-full" src="${opponent.avatarUrl}" />
-		  <span class="text-sm">${opponent.displayName}</span>
+		  <span class="text-sm ${opponentClass}">${opponent.displayName}</span>
 		</div>
 		<div class="text-right">
 		  <p class="text-xs text-white/40">${new Date(match.playedAt).toLocaleDateString()}</p>

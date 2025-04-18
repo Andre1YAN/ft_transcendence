@@ -65,6 +65,39 @@ export async function userRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // 添加特殊用户查询API端点
+  fastify.get('/users/special', async (request: FastifyRequest<{Querystring: {email: string}}>, reply: FastifyReply) => {
+    const { email } = request.query;
+    
+    if (!email || email.trim() === '') {
+      return reply.status(400).send({ message: 'Email parameter is required' });
+    }
+    
+    try {
+      // 查找特殊用户（AI Bot或Guest）
+      const user = await prisma.user.findFirst({
+        where: {
+          email: email  // 使用邮箱查找，更准确
+        },
+        select: {
+          id: true,
+          displayName: true,
+          avatarUrl: true,
+          email: true
+        }
+      });
+      
+      if (!user) {
+        return reply.status(404).send({ message: 'Special user not found' });
+      }
+      
+      return reply.send(user);
+    } catch (err) {
+      console.error('Error finding special user:', err);
+      return reply.status(500).send({ message: 'Internal server error' });
+    }
+  });
+
     // ✅ 新增：Block 某人
 	fastify.post('/users/block', {
 		preHandler: [fastify.authenticate]

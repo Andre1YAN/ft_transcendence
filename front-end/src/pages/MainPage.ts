@@ -4,7 +4,6 @@ import { renderNavbar, bindNavbarEvents } from '../components/Navbar'
 import { initStars } from '../components/initStars'
 import { t } from '../State/i18n'
 import { handlePresenceUpdate } from './FriendsPage'
-import { getSocket } from '../ws/globalSocket';
 import { ChannelDTO } from '../types/channel';
 import { initGlobalSocket } from '../ws/globalSocket';
 
@@ -270,7 +269,7 @@ function loadChannels() {
     </div>
   `;
   
-  console.log('[Debug] 重新加载频道列表...');
+  console.log(`[Debug] ${t('websocket.channel_message.loading')}`);
   
   fetch('http://localhost:3000/api/channels/my-channels', {
     headers: {
@@ -279,12 +278,12 @@ function loadChannels() {
   })
   .then(res => {
     if (!res.ok) {
-      throw new Error(`服务器错误: ${res.status} ${res.statusText}`);
+      throw new Error(`${t('websocket.connection_error')}: ${res.status} ${res.statusText}`);
     }
     return res.json();
   })
   .then(data => {
-    console.log('[Debug] 已获取用户频道列表，频道数量:', data.length);
+    console.log(`[Debug] ${t('channel.load_success')}:`, data.length);
     
     // 确保返回的数据是数组
     const channels = Array.isArray(data) ? data : [];
@@ -343,13 +342,13 @@ function loadChannels() {
     });
   })
   .catch(err => {
-    console.error('获取频道列表失败:', err);
+    console.error(`${t('channel.load_error')}:`, err);
     channelListEl.innerHTML = `
       <div class="text-center py-6">
         <svg class="w-8 h-8 mx-auto mb-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
         </svg>
-        <p class="text-sm text-red-400">加载失败，请重试</p>
+        <p class="text-sm text-red-400">${t('channel.load_error')}</p>
       </div>
     `;
   });
@@ -366,12 +365,12 @@ function showCreateChannelDialog() {
       
       <form id="create-channel-form">
         <div class="mb-4">
-          <label class="block text-sm font-medium mb-1">频道名称</label>
+          <label class="block text-sm font-medium mb-1">${t('channel.channel_name')}</label>
           <input type="text" id="channel-name" class="w-full px-3 py-2 bg-gray-700 rounded" required>
         </div>
         
         <div class="mb-4">
-          <label class="block text-sm font-medium mb-1">描述（可选）</label>
+          <label class="block text-sm font-medium mb-1">${t('channel.description')}</label>
           <textarea id="channel-description" class="w-full px-3 py-2 bg-gray-700 rounded" rows="2"></textarea>
         </div>
         
@@ -386,7 +385,7 @@ function showCreateChannelDialog() {
         </div>
         
         <div class="flex justify-end gap-3">
-          <button type="button" id="cancel-create" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded">取消</button>
+          <button type="button" id="cancel-create" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded">${t('channel.cancel')}</button>
           <button type="submit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded">${t('channel.create')}</button>
         </div>
       </form>
@@ -447,8 +446,8 @@ function showCreateChannelDialog() {
       }
     })
     .catch(err => {
-      console.error('创建频道出错:', err)
-      alert(t('channel.create_error'))
+      console.error(`${t('channel.create_error')}:`, err);
+      alert(t('channel.create_error'));
     })
   })
 }
@@ -558,8 +557,8 @@ function showSearchChannelDialog() {
       })
     })
     .catch(err => {
-      console.error('搜索频道出错:', err)
-      resultsContainer.innerHTML = `<p class="text-center py-2 text-red-400">${t('channel.search_error')}</p>`
+      console.error(`${t('channel.search_error')}:`, err);
+      resultsContainer.innerHTML = `<p class="text-center py-2 text-red-400">${t('channel.search_error')}</p>`;
     })
   })
   
@@ -583,17 +582,38 @@ function showSearchChannelDialog() {
     })
     .then(res => res.json())
     .then(response => {
-      if (response.message && !response.message.includes('失败')) {
-        // 加入成功，关闭模态框并刷新频道列表
-        document.body.removeChild(modal)
-        loadChannels()
+      if (response.success || (response.message && response.message.includes(t('channel.join_success')))) {
+        // 显示成功提示
+        alert(t('channel.join_success'));
+        
+        // 保存选中的频道ID
+        const joinedChannelId = selectedChannelId;
+        
+        // 不关闭模态框，先直接加载频道消息
+        if (joinedChannelId) {
+          currentChannelId = joinedChannelId;
+          loadChannelMessages(joinedChannelId);
+        }
+        
+        // 立即刷新频道列表（不等待WebSocket通知）
+        loadChannels();
+        
+        // 更新搜索结果中该频道的样式，表明已加入
+        const channelSearchItem = document.querySelector(`.channel-search-item[data-id="${joinedChannelId}"]`);
+        if (channelSearchItem) {
+          channelSearchItem.classList.add('bg-green-900/30', 'border', 'border-green-500');
+          const joinStatusIndicator = document.createElement('span');
+          joinStatusIndicator.className = 'text-xs bg-green-600 rounded px-1 ml-1';
+          joinStatusIndicator.textContent = t('channel.joined');
+          channelSearchItem.querySelector('div:first-child')?.appendChild(joinStatusIndicator);
+        }
       } else {
-        alert(response.message || t('channel.join_error'))
+        alert(response.message || t('channel.join_error'));
       }
     })
     .catch(err => {
-      console.error('加入频道出错:', err)
-      alert(t('channel.join_error'))
+      console.error(`${t('channel.join_error')}:`, err);
+      alert(t('channel.join_error'));
     })
   })
   
@@ -618,11 +638,11 @@ const displayedMessageIds = new Set<number | string>();
 
 // 加载频道消息
 function loadChannelMessages(channelId: string) {
-  currentChannelId = channelId
+  currentChannelId = channelId;
   
   // 清空已显示消息的记录
   displayedMessageIds.clear();
-  console.log('切换频道，已清空消息记录');
+  console.log(t('websocket.channel_message.cleared'));
   
   const messagesContainer = document.getElementById('channel-messages')
   const channelInfoEl = document.getElementById('channel-info')
@@ -911,10 +931,29 @@ function handleChannelMessage(data: any) {
 
 // 处理用户加入频道事件
 function handleChannelUserJoined(data: any) {
+  console.log(`${t('websocket.channel_message.received')}: ${data.member.displayName} ${t('channel.user_joined').replace('{user}', '')}`);
+  
+  // 如果是自己加入了频道，刷新频道列表并切换到该频道
+  if (data.isSelf) {
+    console.log(`自己加入了频道 ${data.channelId}，正在切换到该频道...`);
+    
+    // 刷新频道列表
+    loadChannels();
+    
+    // 如果当前没有选中的频道或当前频道不是刚加入的频道，则切换
+    if (!currentChannelId || currentChannelId !== data.channelId) {
+      // 设置当前频道ID
+      currentChannelId = data.channelId;
+      
+      // 加载该频道消息
+      loadChannelMessages(data.channelId);
+    }
+    
+    return;
+  }
+  
   // 如果不是当前频道，忽略
   if (!currentChannelId || data.channelId !== currentChannelId) return;
-  
-  console.log(`收到用户加入频道通知: ${data.member.displayName} 加入了频道`);
   
   // 在频道消息区域显示一条系统消息
   const messagesContainer = document.getElementById('channel-messages');
@@ -922,7 +961,7 @@ function handleChannelUserJoined(data: any) {
     const joinMessage = `
       <div class="text-center my-2">
         <span class="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
-          ${data.member.displayName} 加入了频道
+          ${t('channel.user_joined').replace('{user}', data.member.displayName)}
         </span>
       </div>
     `;
@@ -953,7 +992,7 @@ function handleChannelUserLeft(data: any) {
   // 如果不是当前频道，忽略
   if (!currentChannelId || data.channelId !== currentChannelId) return;
   
-  console.log(`收到用户离开频道通知: ${data.displayName} (ID: ${data.userId}) 离开了频道`);
+  console.log(`${t('websocket.channel_message.received')}: ${data.displayName} ${t('channel.user_left').replace('{user}', '')}`);
   
   // 在频道消息区域显示一条系统消息
   const messagesContainer = document.getElementById('channel-messages');
@@ -961,7 +1000,7 @@ function handleChannelUserLeft(data: any) {
     const leaveMessage = `
       <div class="text-center my-2">
         <span class="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded">
-          ${data.displayName} 离开了频道
+          ${t('channel.user_left').replace('{user}', data.displayName)}
         </span>
       </div>
     `;
@@ -992,7 +1031,7 @@ function handleChannelUserKicked(data: any) {
   // 如果不是当前频道，忽略
   if (!currentChannelId || data.channelId !== currentChannelId) return;
   
-  console.log(`收到用户被踢出频道通知: ${data.displayName} (ID: ${data.userId}) 被管理员 ${data.adminName} 踢出了频道`);
+  console.log(`${t('websocket.channel_message.received')}: ${data.displayName} ${t('channel.user_kicked').replace('{user}', '')}`);
   
   // 在频道消息区域显示一条系统消息
   const messagesContainer = document.getElementById('channel-messages');
@@ -1000,7 +1039,7 @@ function handleChannelUserKicked(data: any) {
     const kickMessage = `
       <div class="text-center my-2">
         <span class="text-xs bg-red-800/50 text-gray-300 px-2 py-1 rounded">
-          ${data.displayName} 被管理员踢出了频道
+          ${t('channel.user_kicked').replace('{user}', data.displayName)}
         </span>
       </div>
     `;
@@ -1029,9 +1068,9 @@ function handleChannelUserKicked(data: any) {
 // 处理当前用户被踢出频道事件
 function handleUserWasKicked(data: any) {
   console.log('===============================================================');
-  console.log(`[WebSocket-Debug] 收到you_were_kicked事件，数据:`, JSON.stringify(data));
-  console.log(`您已被管理员 ${data.adminName} 踢出频道 ${data.channelName} (ID: ${data.channelId})`);
-  console.log(`当前查看的频道ID: ${currentChannelId}`);
+  console.log(`[WebSocket-Debug] ${t('websocket.channel_message.received')}:`, JSON.stringify(data));
+  console.log(`${t('channel.you_kicked').replace('{admin}', data.adminName).replace('{channel}', data.channelName)}`);
+  console.log(`${t('channel.no_channel_selected')}: ${currentChannelId}`);
   console.log('===============================================================');
   
   // 无论用户是否在查看被踢出的频道，都刷新频道列表
@@ -1040,7 +1079,7 @@ function handleUserWasKicked(data: any) {
   // 如果当前正在查看被踢出的频道，则重置界面
   if (currentChannelId === data.channelId) {
     // 显示通知
-    alert(`您已被管理员 ${data.adminName} 踢出频道 "${data.channelName}"`);
+    alert(t('channel.you_kicked').replace('{admin}', data.adminName).replace('{channel}', data.channelName));
     
     // 重置当前频道ID
     currentChannelId = null;
@@ -1051,7 +1090,7 @@ function handleUserWasKicked(data: any) {
     // 如果用户不在查看被踢出的频道，仍然显示通知，但使用较不干扰的方式
     const toastDiv = document.createElement('div');
     toastDiv.className = 'fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded shadow-lg z-50';
-    toastDiv.innerHTML = `您已被管理员 ${data.adminName} 踢出频道 "${data.channelName}"`;
+    toastDiv.innerHTML = t('channel.you_kicked').replace('{admin}', data.adminName).replace('{channel}', data.channelName);
     document.body.appendChild(toastDiv);
     
     // 3秒后自动消失
@@ -1069,7 +1108,6 @@ function updateChannelInfoBar(channelData: any) {
   if (!channelInfoEl) return;
   
   const adminCount = channelData.members.filter((m: any) => m.isAdmin).length;
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
   
   channelInfoEl.innerHTML = `
     <div class="flex justify-between items-center">
@@ -1101,7 +1139,7 @@ function updateChannelInfoBar(channelData: any) {
           <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          退出
+          ${t('channel.leave')}
         </button>
         ${currentUserIsAdmin(channelData.members) ? 
           `<button id="channel-settings-btn" class="text-xs bg-gray-700 hover:bg-gray-600 px-2.5 py-1 rounded flex items-center transition-colors duration-200">
@@ -1109,7 +1147,7 @@ function updateChannelInfoBar(channelData: any) {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            管理
+            ${t('channel.manage')}
           </button>` : ''}
       </div>
     </div>
@@ -1156,7 +1194,7 @@ function handleLeaveChannel(channelId: string) {
     }
   })
   .catch(err => {
-    console.error('退出频道失败:', err);
+    console.error(`${t('channel.leave_error')}:`, err);
     alert(t('channel.leave_error'));
   });
 }
@@ -1208,7 +1246,7 @@ function handleChannelAdminChanged(data: any) {
   // 如果不是当前频道，忽略
   if (!currentChannelId || data.channelId !== currentChannelId) return;
   
-  console.log(`收到频道管理员变更通知: ${data.displayName} (ID: ${data.userId}) ${data.isAdmin ? '被设置为' : '被移除'}管理员权限，操作者: ${data.changedBy}`);
+  console.log(`${t('websocket.channel_message.received')}: ${data.displayName} ${t('channel.admin_changed').replace('{user}', '').replace('{action}', data.isAdmin ? t('channel.set_as_admin') : t('channel.removed_as_admin'))}`);
   
   // 在频道消息区域显示一条系统消息
   const messagesContainer = document.getElementById('channel-messages');
@@ -1216,7 +1254,7 @@ function handleChannelAdminChanged(data: any) {
     const adminChangeMessage = `
       <div class="text-center my-2">
         <span class="text-xs bg-yellow-600/50 text-gray-200 px-2 py-1 rounded">
-          ${data.displayName} ${data.isAdmin ? '被设置为' : '被移除'}管理员权限
+          ${t('channel.admin_changed').replace('{user}', data.displayName).replace('{action}', data.isAdmin ? t('channel.set_as_admin') : t('channel.removed_as_admin'))}
         </span>
       </div>
     `;
@@ -1230,12 +1268,12 @@ function handleChannelAdminChanged(data: any) {
   
   // 如果当前用户是变更的对象，检查我们自己的管理员状态
   if (currentUserId === data.userId) {
-    console.log(`您的管理员状态已变更为: ${data.isAdmin ? '管理员' : '普通成员'}`);
+    console.log(`${t('websocket.channel_message.received')}: ${data.isAdmin ? t('channel.admin_set_success') : t('channel.admin_removed_success')}`);
     
     // 显示通知
     const toastDiv = document.createElement('div');
     toastDiv.className = 'fixed top-4 right-4 bg-yellow-600 text-white px-4 py-2 rounded shadow-lg z-50';
-    toastDiv.innerHTML = `您已${data.isAdmin ? '成为' : '不再是'}此频道的管理员`;
+    toastDiv.innerHTML = data.isAdmin ? t('channel.admin_set_success') : t('channel.admin_removed_success');
     document.body.appendChild(toastDiv);
     
     // 3秒后自动消失
@@ -1271,49 +1309,49 @@ function showChannelSettings(channelId: string, channelData: any) {
   modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50'
   modal.innerHTML = `
     <div class="bg-gray-800 p-6 rounded-lg shadow-lg w-full max-w-lg">
-      <h3 class="text-xl font-bold mb-4">频道管理 - ${channelData.channelInfo.name}</h3>
+      <h3 class="text-xl font-bold mb-4">${t('channel.management').replace('{name}', channelData.channelInfo.name)}</h3>
       
       <div class="mb-4">
-        <h4 class="font-medium mb-2">频道设置</h4>
+        <h4 class="font-medium mb-2">${t('channel.channel_settings')}</h4>
         <div class="mb-3">
           <button id="set-password-btn" class="px-3 py-1 bg-blue-600 hover:bg-blue-500 rounded mr-2">
-            ${channelData.channelInfo.isPrivate ? '修改密码' : '设置密码'}
+            ${channelData.channelInfo.isPrivate ? t('channel.set_password') : t('channel.set_password')}
           </button>
           ${channelData.channelInfo.isPrivate ? 
-            '<button id="remove-password-btn" class="px-3 py-1 bg-red-600 hover:bg-red-500 rounded">移除密码</button>' : ''}
+            `<button id="remove-password-btn" class="px-3 py-1 bg-red-600 hover:bg-red-500 rounded">${t('channel.remove_password')}</button>` : ''}
         </div>
       </div>
       
       <div class="mb-4">
-        <h4 class="font-medium mb-2">成员管理</h4>
+        <h4 class="font-medium mb-2">${t('channel.member_management')}</h4>
         <div id="members-list" class="max-h-60 overflow-y-auto">
           ${channelData.members.map((member: any) => `
             <div class="member-item flex justify-between items-center p-2 mb-1 bg-gray-700/50 rounded">
               <div>
                 <span class="font-medium">${member.displayName}</span>
-                ${member.isAdmin ? '<span class="text-xs bg-yellow-600 rounded px-1 ml-1">管理员</span>' : ''}
-                ${member.isMuted ? '<span class="text-xs bg-red-600 rounded px-1 ml-1">已禁言</span>' : ''}
+                ${member.isAdmin ? `<span class="text-xs bg-yellow-600 rounded px-1 ml-1">${t('channel.admin_badge')}</span>` : ''}
+                ${member.isMuted ? `<span class="text-xs bg-red-600 rounded px-1 ml-1">${t('channel.muted_until').replace('{time}', '')}</span>` : ''}
               </div>
               <div class="member-actions" data-user-id="${member.userId}">
                 ${!member.isAdmin ? 
                   `<button class="set-admin-btn text-xs bg-yellow-600 hover:bg-yellow-500 px-2 py-1 rounded mr-1">
-                    设为管理员
+                    ${t('channel.set_admin')}
                   </button>` : ''}
                 ${member.isAdmin && !isSelf(member.userId) ? 
                   `<button class="remove-admin-btn text-xs bg-yellow-700 hover:bg-yellow-600 px-2 py-1 rounded mr-1">
-                    取消管理员
+                    ${t('channel.remove_admin')}
                   </button>` : ''}
                 ${!member.isMuted && !member.isAdmin ? 
                   `<button class="mute-btn text-xs bg-red-600 hover:bg-red-500 px-2 py-1 rounded mr-1">
-                    禁言
+                    ${t('channel.mute')}
                   </button>` : ''}
                 ${member.isMuted ? 
                   `<button class="unmute-btn text-xs bg-green-600 hover:bg-green-500 px-2 py-1 rounded mr-1">
-                    解除禁言
+                    ${t('channel.unmute')}
                   </button>` : ''}
                 ${!member.isAdmin && !isSelf(member.userId) ? 
                   `<button class="kick-btn text-xs bg-red-800 hover:bg-red-700 px-2 py-1 rounded">
-                    踢出
+                    ${t('channel.kick')}
                   </button>` : ''}
               </div>
             </div>
@@ -1322,8 +1360,7 @@ function showChannelSettings(channelId: string, channelData: any) {
       </div>
       
       <div class="flex justify-between">
-        <button id="leave-channel-btn" class="px-4 py-2 bg-red-600 hover:bg-red-500 rounded">退出频道</button>
-        <button id="close-settings" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded">关闭</button>
+        <button id="close-settings" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded">${t('channel.close')}</button>
       </div>
     </div>
   `
@@ -1370,7 +1407,7 @@ function showChannelSettings(channelId: string, channelData: any) {
       document.body.removeChild(modal)
     })
     .catch(err => {
-      console.error('设置密码失败:', err)
+      console.error(`${t('channel.set_password_error')}:`, err)
       alert(t('channel.set_password_error'))
     })
   })
@@ -1398,7 +1435,7 @@ function showChannelSettings(channelId: string, channelData: any) {
       document.body.removeChild(modal)
     })
     .catch(err => {
-      console.error('移除密码失败:', err)
+      console.error(`${t('channel.remove_password_error')}:`, err)
       alert(t('channel.remove_password_error'))
     })
   })
@@ -1438,7 +1475,7 @@ function showChannelSettings(channelId: string, channelData: any) {
         document.body.removeChild(modal)
       })
       .catch(err => {
-        console.error('设置管理员失败:', err)
+        console.error(`${t('channel.operation_failed')}:`, err)
         alert(t('channel.operation_failed'))
       })
     }
@@ -1463,7 +1500,7 @@ function showChannelSettings(channelId: string, channelData: any) {
         document.body.removeChild(modal)
       })
       .catch(err => {
-        console.error('移除管理员权限失败:', err)
+        console.error(`${t('channel.admin_removed_success')} ${t('channel.operation_failed')}:`, err)
         alert(t('channel.operation_failed'))
       })
     }
@@ -1492,7 +1529,7 @@ function showChannelSettings(channelId: string, channelData: any) {
         document.body.removeChild(modal)
       })
       .catch(err => {
-        console.error('禁言用户失败:', err)
+        console.error(`${t('channel.mute_error')}:`, err)
         alert(t('channel.operation_failed'))
       })
     }
@@ -1517,7 +1554,7 @@ function showChannelSettings(channelId: string, channelData: any) {
         document.body.removeChild(modal)
       })
       .catch(err => {
-        console.error('解除禁言失败:', err)
+        console.error(`${t('channel.unmute_error')}:`, err)
         alert(t('channel.operation_failed'))
       })
     }
@@ -1544,7 +1581,7 @@ function showChannelSettings(channelId: string, channelData: any) {
         document.body.removeChild(modal)
       })
       .catch(err => {
-        console.error('踢出用户失败:', err)
+        console.error(`${t('channel.kick_error')}:`, err)
         alert(t('channel.operation_failed'))
       })
     }
@@ -1552,39 +1589,6 @@ function showChannelSettings(channelId: string, channelData: any) {
 }
 
 // 处理踢出用户
-async function handleKickUser(userId: number, username: string) {
-  if (!confirm(`${t('channel.kick_confirm').replace('{username}', username)}`)) {
-    return;
-  }
-  
-  if (currentChannelId === null) {
-    showAlert('error', t('channel.no_channel_selected'));
-    return;
-  }
-  
-  try {
-    const response = await fetch(`http://localhost:3000/api/channels/${currentChannelId}/kick`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
-      },
-      body: JSON.stringify({ userId })
-    });
-    
-    const data = await response.json();
-    
-    if (response.ok) {
-      showAlert('success', t('channel.kick_success').replace('{username}', username));
-      await loadChannelMessages(currentChannelId);
-    } else {
-      showAlert('error', `${t('channel.kick_error')}: ${data.message}`);
-    }
-  } catch (error) {
-    console.error('Error kicking user:', error);
-    showAlert('error', t('channel.kick_error'));
-  }
-}
 
 // 在适当位置（建议在handleUserWasKicked函数后面）添加以下函数
 
@@ -1593,7 +1597,7 @@ function handleChannelUserMuted(data: any) {
   // 如果不是当前频道，忽略
   if (!currentChannelId || data.channelId !== currentChannelId) return;
   
-  console.log(`收到用户被禁言通知: ${data.displayName} (ID: ${data.userId}) 被管理员 ${data.adminName} 禁言，持续 ${data.duration} 分钟`);
+  console.log(`${t('websocket.channel_message.received')}: ${data.displayName} ${t('channel.user_muted').replace('{user}', '').replace('{duration}', data.duration)}`);
   
   // 在频道消息区域显示一条系统消息
   const messagesContainer = document.getElementById('channel-messages');
@@ -1601,7 +1605,7 @@ function handleChannelUserMuted(data: any) {
     const muteMessage = `
       <div class="text-center my-2">
         <span class="text-xs bg-red-800/50 text-gray-300 px-2 py-1 rounded">
-          ${data.displayName} 被管理员禁言 ${data.duration} 分钟
+          ${t('channel.user_muted').replace('{user}', data.displayName).replace('{duration}', data.duration)}
         </span>
       </div>
     `;
@@ -1623,7 +1627,7 @@ function handleChannelUserMuted(data: any) {
     updateChannelInfoBar(channelData);
   })
   .catch(err => {
-    console.error('更新频道成员信息失败:', err);
+    console.error(`${t('channel.load_error')}:`, err);
   });
 }
 
@@ -1632,7 +1636,7 @@ function handleChannelUserUnmuted(data: any) {
   // 如果不是当前频道，忽略
   if (!currentChannelId || data.channelId !== currentChannelId) return;
   
-  console.log(`收到用户被解除禁言通知: ${data.displayName} (ID: ${data.userId}) 被管理员 ${data.adminName} 解除禁言`);
+  console.log(`${t('websocket.channel_message.received')}: ${data.displayName} ${t('channel.user_unmuted').replace('{user}', '')}`);
   
   // 在频道消息区域显示一条系统消息
   const messagesContainer = document.getElementById('channel-messages');
@@ -1640,7 +1644,7 @@ function handleChannelUserUnmuted(data: any) {
     const unmuteMessage = `
       <div class="text-center my-2">
         <span class="text-xs bg-green-800/50 text-gray-300 px-2 py-1 rounded">
-          ${data.displayName} 被管理员解除禁言
+          ${t('channel.user_unmuted').replace('{user}', data.displayName)}
         </span>
       </div>
     `;
@@ -1662,16 +1666,16 @@ function handleChannelUserUnmuted(data: any) {
     updateChannelInfoBar(channelData);
   })
   .catch(err => {
-    console.error('更新频道成员信息失败:', err);
+    console.error(`${t('channel.load_error')}:`, err);
   });
 }
 
 // 处理当前用户被禁言事件
 function handleUserWasMuted(data: any) {
   console.log('===============================================================');
-  console.log(`[WebSocket-Debug] 收到you_were_muted事件，数据:`, JSON.stringify(data));
-  console.log(`您已被管理员 ${data.adminName} 禁言，持续 ${data.duration} 分钟，到期时间: ${new Date(data.muteEndTime).toLocaleString()}`);
-  console.log(`当前查看的频道ID: ${currentChannelId}`);
+  console.log(`[WebSocket-Debug] ${t('websocket.channel_message.received')}:`, JSON.stringify(data));
+  console.log(`${t('channel.you_muted').replace('{admin}', data.adminName).replace('{channel}', data.channelName).replace('{duration}', data.duration)}`);
+  console.log(`${t('channel.no_channel_selected')}: ${currentChannelId}`);
   console.log('===============================================================');
   
   // 无论用户是否在查看被禁言的频道，都显示通知
@@ -1700,9 +1704,9 @@ function handleUserWasMuted(data: any) {
 // 处理当前用户被解除禁言事件
 function handleUserWasUnmuted(data: any) {
   console.log('===============================================================');
-  console.log(`[WebSocket-Debug] 收到you_were_unmuted事件，数据:`, JSON.stringify(data));
-  console.log(`您已被管理员 ${data.adminName} 在频道 "${data.channelName}" 中解除禁言`);
-  console.log(`当前查看的频道ID: ${currentChannelId}`);
+  console.log(`[WebSocket-Debug] ${t('websocket.channel_message.received')}:`, JSON.stringify(data));
+  console.log(`${t('channel.you_unmuted').replace('{admin}', data.adminName).replace('{channel}', data.channelName)}`);
+  console.log(`${t('channel.no_channel_selected')}: ${currentChannelId}`);
   console.log('===============================================================');
   
   // 无论用户是否在查看被解除禁言的频道，都显示通知
@@ -1728,23 +1732,4 @@ function handleUserWasUnmuted(data: any) {
 }
 
 // 创建一个简单的提示函数
-function showAlert(type: 'success' | 'error' | 'info', message: string) {
-  const alertDiv = document.createElement('div');
-  
-  // 根据类型设置不同的样式
-  let bgColor = '';
-  if (type === 'success') bgColor = 'bg-green-600';
-  else if (type === 'error') bgColor = 'bg-red-600';
-  else bgColor = 'bg-blue-600';
-  
-  alertDiv.className = `fixed top-4 right-4 ${bgColor} text-white px-4 py-2 rounded shadow-lg z-50`;
-  alertDiv.innerHTML = message;
-  document.body.appendChild(alertDiv);
-  
-  // 3秒后自动消失
-  setTimeout(() => {
-    if (document.body.contains(alertDiv)) {
-      document.body.removeChild(alertDiv);
-    }
-  }, 3000);
-}
+

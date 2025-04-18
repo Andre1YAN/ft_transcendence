@@ -52,7 +52,6 @@ export class GlobalSocket {
 	private maxReconnectAttempts = 10;
 	private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 	private connectionStartTime: number = 0;
-	private state: string = 'DISCONNECTED';
   
 	constructor(userId: number) {
 	  this.userId = userId;
@@ -89,7 +88,6 @@ export class GlobalSocket {
 	    this.socket = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://localhost:3000/ws/presence`);
     
 	    this.socket.addEventListener('open', () => {
-	      this.state = 'OPEN';
 	      console.log(t('websocket.connection_open'));
 	      
 	      // 发送上线消息

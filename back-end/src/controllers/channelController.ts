@@ -2,38 +2,38 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import * as bcrypt from 'bcrypt';
 import { onlineUsers } from '../ws/presence';
 
-// 创建频道
+// Create channel
 export const createChannel = async (req: FastifyRequest, res: FastifyReply) => {
   const { name, description, isPrivate, password } = req.body as any;
   const userId = (req.user as any).id;
   const prisma = (req.server as any).prisma;
 
   try {
-    // 检查频道名是否已存在
+    // Check if channel name already exists
     const existingChannel = await prisma.channel.findUnique({
       where: { name }
     });
 
     if (existingChannel) {
-      return res.status(400).send({ message: '频道名已存在' });
+      return res.status(400).send({ message: 'Channel name already exists' });
     }
 
-    // 对密码进行哈希处理（如果有）
+    // Hash password (if provided)
     let hashedPassword = null;
     if (password) {
       hashedPassword = await bcrypt.hash(password, 10);
     }
 
-    // 获取用户信息
+    // Get user information
     const user = await prisma.user.findUnique({
       where: { id: userId }
     });
 
     if (!user) {
-      return res.status(404).send({ message: '用户不存在' });
+      return res.status(404).send({ message: 'User not found' });
     }
 
-    // 创建频道
+    // Create channel
     const channel = await prisma.channel.create({
       data: {
         name,
@@ -58,15 +58,15 @@ export const createChannel = async (req: FastifyRequest, res: FastifyReply) => {
       createdAt: channel.createdAt
     });
   } catch (error: any) {
-    console.error('创建频道错误:', error);
+    console.error('Error creating channel:', error);
     return res.status(500).send({ 
-      message: '创建频道失败', 
+      message: 'Failed to create channel', 
       error: error.message 
     });
   }
 };
 
-// 搜索频道
+// Search channels
 export const searchChannels = async (req: FastifyRequest, res: FastifyReply) => {
   const query = (req.query as any).query;
   const prisma = (req.server as any).prisma;
@@ -90,27 +90,27 @@ export const searchChannels = async (req: FastifyRequest, res: FastifyReply) => 
     
     return res.send(channels);
   } catch (error) {
-    return res.status(500).send({ message: '搜索频道失败', error });
+    return res.status(500).send({ message: 'Failed to search channels', error });
   }
 };
 
-// 加入频道
+// Join channel
 export const joinChannel = async (req: FastifyRequest, res: FastifyReply) => {
   const { channelId, password } = req.body as any;
   const userId = (req.user as any).id;
   const prisma = (req.server as any).prisma;
   
   try {
-    // 检查频道是否存在
+    // Check if channel exists
     const channel = await prisma.channel.findUnique({
       where: { id: channelId }
     });
     
     if (!channel) {
-      return res.status(404).send({ message: '频道不存在' });
+      return res.status(404).send({ message: 'Channel not found' });
     }
     
-    // 检查用户是否已加入
+    // Check if user already joined
     const existingMember = await prisma.channelMember.findUnique({
       where: {
         userId_channelId: { userId, channelId }
@@ -118,22 +118,22 @@ export const joinChannel = async (req: FastifyRequest, res: FastifyReply) => {
     });
     
     if (existingMember) {
-      return res.status(400).send({ message: '您已经加入了该频道' });
+      return res.status(400).send({ message: 'You have already joined this channel' });
     }
     
-    // 如果频道有密码，验证密码
+    // Verify password if channel has one
     if (channel.password) {
       if (!password) {
-        return res.status(403).send({ message: '需要密码才能加入此频道' });
+        return res.status(403).send({ message: 'Password required to join this channel' });
       }
       
       const passwordMatch = await bcrypt.compare(password, channel.password);
       if (!passwordMatch) {
-        return res.status(403).send({ message: '密码错误' });
+        return res.status(403).send({ message: 'Incorrect password' });
       }
     }
     
-    // 获取用户信息
+    // Get user information
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -144,28 +144,36 @@ export const joinChannel = async (req: FastifyRequest, res: FastifyReply) => {
     });
 
     if (!user) {
-      return res.status(404).send({ message: '用户不存在' });
+      return res.status(404).send({ message: 'User not found' });
     }
     
-    // 加入频道
+    // 检查该频道是否还有其他成员，如果是空频道，则第一个加入的用户成为管理员
+    const memberCount = await prisma.channelMember.count({
+      where: { channelId }
+    });
+    
+    const isAdmin = memberCount === 0; // 如果没有成员，则新加入的用户成为管理员
+    
+    // Join channel
     const newMember = await prisma.channelMember.create({
       data: {
         userId,
         channelId,
-        displayName: user.displayName
+        displayName: user.displayName,
+        isAdmin // 如果是空频道的第一个成员，自动成为管理员
       }
     });
     
-    // 查找频道中的所有成员
+    // Get all channel members
     const channelMembers = await prisma.channelMember.findMany({
       where: { channelId },
       select: { userId: true }
     });
     
-    // 向频道中的所有在线成员发送通知
-    console.log(`用户 ${userId} (${user.displayName}) 已加入频道 ${channelId}，正在通知其他成员`);
+    // Notify all online channel members
+    console.log(`User ${userId} (${user.displayName}) has joined channel ${channelId}, notifying other members`);
     
-    // 构造通知消息
+    // Construct notification message
     const joinNotification = {
       type: 'channel_user_joined',
       channelId,
@@ -180,30 +188,44 @@ export const joinChannel = async (req: FastifyRequest, res: FastifyReply) => {
       }
     };
     
-    // 广播通知消息
+    // Broadcast notification
     channelMembers.forEach((member: { userId: number }) => {
       const memberSocket = onlineUsers.get(member.userId);
       if (memberSocket && memberSocket.readyState === 1) {
         try {
           memberSocket.send(JSON.stringify(joinNotification));
-          console.log(`已通知用户 ${member.userId} 关于新成员加入`);
+          console.log(`Notified user ${member.userId} about new member joining`);
         } catch (err) {
-          console.error(`通知用户 ${member.userId} 失败:`, err);
+          console.error(`Failed to notify user ${member.userId}:`, err);
         }
       }
     });
     
-    return res.status(201).send({ message: '成功加入频道' });
+    // Also notify the joining user
+    const joiningUserSocket = onlineUsers.get(userId);
+    if (joiningUserSocket && joiningUserSocket.readyState === 1) {
+      try {
+        joiningUserSocket.send(JSON.stringify({
+          ...joinNotification,
+          isSelf: true
+        }));
+        console.log(`Also notified joining user ${userId} about their own join event`);
+      } catch (err) {
+        console.error(`Failed to notify joining user ${userId}:`, err);
+      }
+    }
+    
+    return res.status(201).send({ message: 'Successfully joined channel' });
   } catch (error: any) {
-    console.error('加入频道错误:', error);
+    console.error('Error joining channel:', error);
     return res.status(500).send({ 
-      message: '加入频道失败', 
+      message: 'Failed to join channel', 
       error: error.message 
     });
   }
 };
 
-// 获取用户的频道列表
+// Get user's channels
 export const getUserChannels = async (req: FastifyRequest, res: FastifyReply) => {
   const userId = (req.user as any).id;
   const prisma = (req.server as any).prisma;
@@ -227,18 +249,18 @@ export const getUserChannels = async (req: FastifyRequest, res: FastifyReply) =>
     
     return res.send(channels);
   } catch (error) {
-    return res.status(500).send({ message: '获取频道列表失败', error });
+    return res.status(500).send({ message: 'Failed to get channel list', error });
   }
 };
 
-// 管理员功能：踢出用户
+// Admin function: Kick user
 export const kickUser = async (req: FastifyRequest, res: FastifyReply) => {
   const { channelId, targetUserId } = req.body as any;
   const userId = (req.user as any).id;
   const prisma = (req.server as any).prisma;
   
   try {
-    // 检查请求者是否为管理员
+    // Check if requester is admin
     const requester = await prisma.channelMember.findUnique({
       where: {
         userId_channelId: { userId, channelId }
@@ -253,15 +275,15 @@ export const kickUser = async (req: FastifyRequest, res: FastifyReply) => {
     });
     
     if (!requester || !requester.isAdmin) {
-      return res.status(403).send({ message: '权限不足，您不是频道管理员' });
+      return res.status(403).send({ message: 'Insufficient permissions. You are not a channel admin' });
     }
     
-    // 不能踢出自己
+    // Cannot kick yourself
     if (userId === parseInt(targetUserId as string)) {
-      return res.status(400).send({ message: '您不能踢出自己' });
+      return res.status(400).send({ message: 'You cannot kick yourself' });
     }
     
-    // 检查目标用户是否存在
+    // Check if target user exists
     const targetMember = await prisma.channelMember.findUnique({
       where: {
         userId_channelId: { 
@@ -272,15 +294,15 @@ export const kickUser = async (req: FastifyRequest, res: FastifyReply) => {
     });
     
     if (!targetMember) {
-      return res.status(404).send({ message: '目标用户不在此频道' });
+      return res.status(404).send({ message: 'Target user is not in this channel' });
     }
     
-    // 不能踢出其他管理员
+    // Cannot kick other admins
     if (targetMember.isAdmin) {
-      return res.status(403).send({ message: '您不能踢出其他管理员' });
+      return res.status(403).send({ message: 'You cannot kick other admins' });
     }
     
-    // 踢出用户
+    // Kick user
     await prisma.channelMember.delete({
       where: {
         userId_channelId: { 
@@ -290,7 +312,7 @@ export const kickUser = async (req: FastifyRequest, res: FastifyReply) => {
       }
     });
     
-    // 获取被踢用户信息
+    // Get kicked user info
     const targetUser = await prisma.user.findUnique({
       where: { id: parseInt(targetUserId as string) },
       select: {
@@ -300,73 +322,73 @@ export const kickUser = async (req: FastifyRequest, res: FastifyReply) => {
       }
     });
     
-    // 获取频道名称
+    // Get channel name
     const channel = await prisma.channel.findUnique({
       where: { id: channelId },
       select: { name: true }
     });
     
-    // 获取频道中剩余的成员
+    // Get remaining channel members
     const remainingMembers = await prisma.channelMember.findMany({
       where: { channelId },
       select: { userId: true }
     });
     
-    // 通知频道中的所有在线成员用户已被踢出
+    // Notify all online channel members that user was kicked
     const kickNotification = {
       type: 'channel_user_kicked',
       channelId,
       userId: parseInt(targetUserId as string),
-      displayName: targetUser?.displayName || '未知用户',
+      displayName: targetUser?.displayName || 'Unknown user',
       adminId: userId,
-      adminName: requester.user?.displayName || '管理员'
+      adminName: requester.user?.displayName || 'Admin'
     };
     
-    // 向频道内其他成员发送通知
+    // Send notification to other channel members
     remainingMembers.forEach((member: { userId: number }) => {
       const memberSocket = onlineUsers.get(member.userId);
       if (memberSocket && memberSocket.readyState === 1) {
         try {
           memberSocket.send(JSON.stringify(kickNotification));
-          console.log(`已通知用户 ${member.userId} 关于用户 ${targetUserId} 被踢出频道`);
+          console.log(`Notified user ${member.userId} about user ${targetUserId} being kicked from channel`);
         } catch (err) {
-          console.error(`通知用户 ${member.userId} 失败:`, err);
+          console.error(`Failed to notify user ${member.userId}:`, err);
         }
       }
     });
     
-    // 向被踢出的用户发送通知
+    // Send notification to kicked user
     const targetUserSocket = onlineUsers.get(parseInt(targetUserId as string));
     if (targetUserSocket && targetUserSocket.readyState === 1) {
       try {
         const kickedNotification = {
           type: 'you_were_kicked',
           channelId,
-          channelName: channel?.name || '未知频道',
+          channelName: channel?.name || 'Unknown channel',
           adminId: userId,
-          adminName: requester.user?.displayName || '管理员'
+          adminName: requester.user?.displayName || 'Admin'
         };
         targetUserSocket.send(JSON.stringify(kickedNotification));
-        console.log(`已通知被踢用户 ${targetUserId} 已被管理员 ${userId} 踢出频道 ${channelId}`);
+        console.log(`Notified kicked user ${targetUserId} about being kicked by admin ${userId} from channel ${channelId}`);
       } catch (err) {
-        console.error(`通知被踢用户 ${targetUserId} 失败:`, err);
+        console.error(`Failed to notify kicked user ${targetUserId}:`, err);
       }
     }
     
-    return res.send({ message: '已成功踢出用户' });
+    return res.send({ message: 'User successfully kicked' });
   } catch (error) {
-    return res.status(500).send({ message: '踢出用户失败', error });
+    return res.status(500).send({ message: 'Failed to kick user', error });
   }
 };
 
-// 管理员功能：禁言用户
+// Admin function: Mute user
 export const muteUser = async (req: FastifyRequest, res: FastifyReply) => {
-  const { channelId, targetUserId, duration } = req.body as any; // duration单位：分钟
+  const { channelId, targetUserId, duration } = req.body as any; // duration in minutes
   const userId = (req.user as any).id;
   const prisma = (req.server as any).prisma;
   
   try {
-    // 验证管理员权限
+    // Verify admin permissions
     const requester = await prisma.channelMember.findUnique({
       where: {
         userId_channelId: { userId, channelId }
@@ -381,15 +403,15 @@ export const muteUser = async (req: FastifyRequest, res: FastifyReply) => {
     });
     
     if (!requester || !requester.isAdmin) {
-      return res.status(403).send({ message: '权限不足，您不是频道管理员' });
+      return res.status(403).send({ message: 'Insufficient permissions. You are not a channel admin' });
     }
     
-    // 不能禁言自己
+    // Cannot mute yourself
     if (userId === parseInt(targetUserId as string)) {
-      return res.status(400).send({ message: '您不能禁言自己' });
+      return res.status(400).send({ message: 'You cannot mute yourself' });
     }
     
-    // 检查目标用户
+    // Check target user
     const targetMember = await prisma.channelMember.findUnique({
       where: {
         userId_channelId: { 
@@ -400,19 +422,19 @@ export const muteUser = async (req: FastifyRequest, res: FastifyReply) => {
     });
     
     if (!targetMember) {
-      return res.status(404).send({ message: '目标用户不在此频道' });
+      return res.status(404).send({ message: 'Target user is not in this channel' });
     }
     
-    // 不能禁言其他管理员
+    // Cannot mute other admins
     if (targetMember.isAdmin) {
-      return res.status(403).send({ message: '您不能禁言其他管理员' });
+      return res.status(403).send({ message: 'You cannot mute other admins' });
     }
     
-    // 计算禁言结束时间
+    // Calculate mute end time
     const muteEndTime = new Date();
     muteEndTime.setMinutes(muteEndTime.getMinutes() + parseInt(duration as string));
     
-    // 设置禁言
+    // Set mute status
     await prisma.channelMember.update({
       where: {
         userId_channelId: { 
@@ -426,7 +448,7 @@ export const muteUser = async (req: FastifyRequest, res: FastifyReply) => {
       }
     });
     
-    // 获取被禁言用户信息
+    // Get muted user info
     const targetUser = await prisma.user.findUnique({
       where: { id: parseInt(targetUserId as string) },
       select: {
@@ -436,80 +458,80 @@ export const muteUser = async (req: FastifyRequest, res: FastifyReply) => {
       }
     });
     
-    // 获取频道名称
+    // Get channel name
     const channel = await prisma.channel.findUnique({
       where: { id: channelId },
       select: { name: true }
     });
     
-    // 获取频道中的所有成员
+    // Get all channel members
     const channelMembers = await prisma.channelMember.findMany({
       where: { channelId },
       select: { userId: true }
     });
     
-    // 通知频道中的所有在线成员用户已被禁言
+    // Notify all online channel members about user being muted
     const muteNotification = {
       type: 'channel_user_muted',
       channelId,
       userId: parseInt(targetUserId as string),
-      displayName: targetUser?.displayName || '未知用户',
+      displayName: targetUser?.displayName || 'Unknown user',
       adminId: userId,
-      adminName: requester.user?.displayName || '管理员',
+      adminName: requester.user?.displayName || 'Admin',
       duration: parseInt(duration as string),
       muteEndTime: muteEndTime.toISOString()
     };
     
-    // 向频道内其他成员发送通知
+    // Send notification to other channel members
     channelMembers.forEach((member: { userId: number }) => {
       const memberSocket = onlineUsers.get(member.userId);
       if (memberSocket && memberSocket.readyState === 1) {
         try {
           memberSocket.send(JSON.stringify(muteNotification));
-          console.log(`已通知用户 ${member.userId} 关于用户 ${targetUserId} 被禁言`);
+          console.log(`Notified user ${member.userId} about user ${targetUserId} being muted`);
         } catch (err) {
-          console.error(`通知用户 ${member.userId} 失败:`, err);
+          console.error(`Failed to notify user ${member.userId}:`, err);
         }
       }
     });
     
-    // 向被禁言的用户发送专门通知
+    // Send special notification to muted user
     const targetUserSocket = onlineUsers.get(parseInt(targetUserId as string));
     if (targetUserSocket && targetUserSocket.readyState === 1) {
       try {
         const mutedNotification = {
           type: 'you_were_muted',
           channelId,
-          channelName: channel?.name || '未知频道',
+          channelName: channel?.name || 'Unknown channel',
           adminId: userId,
-          adminName: requester.user?.displayName || '管理员',
+          adminName: requester.user?.displayName || 'Admin',
           duration: parseInt(duration as string),
           muteEndTime: muteEndTime.toISOString()
         };
         targetUserSocket.send(JSON.stringify(mutedNotification));
-        console.log(`已通知被禁言用户 ${targetUserId} 已被管理员 ${userId} 禁言，持续 ${duration} 分钟`);
+        console.log(`Notified muted user ${targetUserId} about being muted by admin ${userId} for ${duration} minutes`);
       } catch (err) {
-        console.error(`通知被禁言用户 ${targetUserId} 失败:`, err);
+        console.error(`Failed to notify muted user ${targetUserId}:`, err);
       }
     }
     
     return res.send({ 
-      message: '已成功禁言用户',
+      message: 'User successfully muted',
       muteEndTime
     });
   } catch (error) {
-    return res.status(500).send({ message: '禁言用户失败', error });
+    return res.status(500).send({ message: 'Failed to mute user', error });
   }
 };
 
-// 解除用户禁言
+// Unmute user
 export const unmuteUser = async (req: FastifyRequest, res: FastifyReply) => {
   const { channelId, targetUserId } = req.body as any;
   const userId = (req.user as any).id;
   const prisma = (req.server as any).prisma;
   
   try {
-    // 验证管理员权限
+    // Verify admin permissions
     const requester = await prisma.channelMember.findUnique({
       where: {
         userId_channelId: { userId, channelId }
@@ -524,10 +546,10 @@ export const unmuteUser = async (req: FastifyRequest, res: FastifyReply) => {
     });
     
     if (!requester || !requester.isAdmin) {
-      return res.status(403).send({ message: '权限不足，您不是频道管理员' });
+      return res.status(403).send({ message: 'Insufficient permissions. You are not a channel admin' });
     }
     
-    // 检查目标用户
+    // Check target user
     const targetMember = await prisma.channelMember.findUnique({
       where: {
         userId_channelId: { 
@@ -538,15 +560,15 @@ export const unmuteUser = async (req: FastifyRequest, res: FastifyReply) => {
     });
     
     if (!targetMember) {
-      return res.status(404).send({ message: '目标用户不在此频道' });
+      return res.status(404).send({ message: 'Target user is not in this channel' });
     }
     
-    // 检查用户是否被禁言
+    // Check if user is muted
     if (!targetMember.isMuted) {
-      return res.status(400).send({ message: '此用户当前未被禁言' });
+      return res.status(400).send({ message: 'This user is not currently muted' });
     }
     
-    // 更新用户禁言状态
+    // Update user mute status
     await prisma.channelMember.update({
       where: {
         userId_channelId: { 
@@ -560,7 +582,7 @@ export const unmuteUser = async (req: FastifyRequest, res: FastifyReply) => {
       }
     });
     
-    // 获取被解除禁言用户信息
+    // Get unmuted user info
     const targetUser = await prisma.user.findUnique({
       where: { id: parseInt(targetUserId as string) },
       select: {
@@ -570,73 +592,73 @@ export const unmuteUser = async (req: FastifyRequest, res: FastifyReply) => {
       }
     });
     
-    // 获取频道名称
+    // Get channel name
     const channel = await prisma.channel.findUnique({
       where: { id: channelId },
       select: { name: true }
     });
     
-    // 获取频道中的所有成员
+    // Get all channel members
     const channelMembers = await prisma.channelMember.findMany({
       where: { channelId },
       select: { userId: true }
     });
     
-    // 通知频道中的所有在线成员用户已被解除禁言
+    // Notify all online channel members that user was unmuted
     const unmuteNotification = {
       type: 'channel_user_unmuted',
       channelId,
       userId: parseInt(targetUserId as string),
-      displayName: targetUser?.displayName || '未知用户',
+      displayName: targetUser?.displayName || 'Unknown user',
       adminId: userId,
-      adminName: requester.user?.displayName || '管理员'
+      adminName: requester.user?.displayName || 'Admin'
     };
     
-    // 向频道内其他成员发送通知
+    // Send notification to other channel members
     channelMembers.forEach((member: { userId: number }) => {
       const memberSocket = onlineUsers.get(member.userId);
       if (memberSocket && memberSocket.readyState === 1) {
         try {
           memberSocket.send(JSON.stringify(unmuteNotification));
-          console.log(`已通知用户 ${member.userId} 关于用户 ${targetUserId} 被解除禁言`);
+          console.log(`Notified user ${member.userId} about user ${targetUserId} being unmuted`);
         } catch (err) {
-          console.error(`通知用户 ${member.userId} 失败:`, err);
+          console.error(`Failed to notify user ${member.userId}:`, err);
         }
       }
     });
     
-    // 向被解除禁言的用户发送专门通知
+    // Send special notification to unmuted user
     const targetUserSocket = onlineUsers.get(parseInt(targetUserId as string));
     if (targetUserSocket && targetUserSocket.readyState === 1) {
       try {
         const unmutedNotification = {
           type: 'you_were_unmuted',
           channelId,
-          channelName: channel?.name || '未知频道',
+          channelName: channel?.name || 'Unknown channel',
           adminId: userId,
-          adminName: requester.user?.displayName || '管理员'
+          adminName: requester.user?.displayName || 'Admin'
         };
         targetUserSocket.send(JSON.stringify(unmutedNotification));
-        console.log(`已通知用户 ${targetUserId} 已被管理员 ${userId} 解除禁言`);
+        console.log(`Notified user ${targetUserId} about being unmuted by admin ${userId}`);
       } catch (err) {
-        console.error(`通知用户 ${targetUserId} 失败:`, err);
+        console.error(`Failed to notify user ${targetUserId}:`, err);
       }
     }
     
-    return res.send({ message: '已成功解除用户禁言' });
+    return res.send({ message: 'User successfully unmuted' });
   } catch (error) {
-    return res.status(500).send({ message: '解除禁言失败', error });
+    return res.status(500).send({ message: 'Failed to unmute user', error });
   }
 };
 
-// 设置频道密码
+// Set channel password
 export const setChannelPassword = async (req: FastifyRequest, res: FastifyReply) => {
   const { channelId, password } = req.body as any;
   const userId = (req.user as any).id;
   const prisma = (req.server as any).prisma;
   
   try {
-    // 验证管理员权限
+    // Verify admin permissions
     const requester = await prisma.channelMember.findUnique({
       where: {
         userId_channelId: { userId, channelId }
@@ -644,16 +666,16 @@ export const setChannelPassword = async (req: FastifyRequest, res: FastifyReply)
     });
     
     if (!requester || !requester.isAdmin) {
-      return res.status(403).send({ message: '权限不足，您不是频道管理员' });
+      return res.status(403).send({ message: 'Insufficient permissions. You are not a channel admin' });
     }
     
-    // 加密密码
+    // Hash password
     let hashedPassword = null;
     if (password) {
       hashedPassword = await bcrypt.hash(password, 10);
     }
     
-    // 更新频道密码
+    // Update channel password
     await prisma.channel.update({
       where: { id: channelId },
       data: { 
@@ -663,22 +685,22 @@ export const setChannelPassword = async (req: FastifyRequest, res: FastifyReply)
     });
     
     return res.send({ 
-      message: password ? '已成功设置频道密码' : '已移除频道密码',
+      message: password ? 'Channel password set successfully' : 'Channel password removed',
       isPrivate: !!hashedPassword
     });
   } catch (error) {
-    return res.status(500).send({ message: '设置密码失败', error });
+    return res.status(500).send({ message: 'Failed to set password', error });
   }
 };
 
-// 设置管理员
+// Set admin
 export const setAdmin = async (req: FastifyRequest, res: FastifyReply) => {
   const { channelId, targetUserId } = req.body as any;
   const userId = (req.user as any).id;
   const prisma = (req.server as any).prisma;
   
   try {
-    // 验证当前用户是否为管理员
+    // Verify if current user is admin
     const requester = await prisma.channelMember.findUnique({
       where: {
         userId_channelId: { userId, channelId }
@@ -693,10 +715,10 @@ export const setAdmin = async (req: FastifyRequest, res: FastifyReply) => {
     });
     
     if (!requester || !requester.isAdmin) {
-      return res.status(403).send({ message: '权限不足，您不是频道管理员' });
+      return res.status(403).send({ message: 'Insufficient permissions. You are not a channel admin' });
     }
     
-    // 获取目标用户信息
+    // Get target user info
     const targetUser = await prisma.user.findUnique({
       where: { id: parseInt(targetUserId as string) },
       select: {
@@ -707,10 +729,10 @@ export const setAdmin = async (req: FastifyRequest, res: FastifyReply) => {
     });
     
     if (!targetUser) {
-      return res.status(404).send({ message: '目标用户不存在' });
+      return res.status(404).send({ message: 'Target user not found' });
     }
     
-    // 更新目标用户为管理员
+    // Update target user to admin
     await prisma.channelMember.update({
       where: {
         userId_channelId: { 
@@ -721,13 +743,13 @@ export const setAdmin = async (req: FastifyRequest, res: FastifyReply) => {
       data: { isAdmin: true }
     });
     
-    // 获取频道成员列表
+    // Get channel members list
     const channelMembers = await prisma.channelMember.findMany({
       where: { channelId },
       select: { userId: true }
     });
     
-    // 通知频道成员有新管理员
+    // Notify channel members about new admin
     const adminChangeNotification = {
       type: 'channel_admin_changed',
       channelId,
@@ -737,33 +759,33 @@ export const setAdmin = async (req: FastifyRequest, res: FastifyReply) => {
       changedBy: requester.user.displayName
     };
     
-    // 向所有在线成员发送通知
+    // Send notification to all online members
     channelMembers.forEach((member: { userId: number }) => {
       const memberSocket = onlineUsers.get(member.userId);
       if (memberSocket && memberSocket.readyState === 1) {
         try {
           memberSocket.send(JSON.stringify(adminChangeNotification));
-          console.log(`已通知用户 ${member.userId} 关于用户 ${targetUserId} 成为管理员`);
+          console.log(`Notified user ${member.userId} about user ${targetUserId} becoming admin`);
         } catch (err) {
-          console.error(`通知用户 ${member.userId} 失败:`, err);
+          console.error(`Failed to notify user ${member.userId}:`, err);
         }
       }
     });
     
-    return res.send({ message: '已成功设置用户为管理员' });
+    return res.send({ message: 'User successfully set as admin' });
   } catch (error) {
-    return res.status(500).send({ message: '设置管理员失败', error });
+    return res.status(500).send({ message: 'Failed to set admin', error });
   }
 };
 
-// 移除管理员权限
+// Remove admin privileges
 export const removeAdmin = async (req: FastifyRequest, res: FastifyReply) => {
   const { channelId, targetUserId } = req.body as any;
   const userId = (req.user as any).id;
   const prisma = (req.server as any).prisma;
   
   try {
-    // 验证当前用户是否为管理员
+    // Verify if current user is admin
     const requester = await prisma.channelMember.findUnique({
       where: {
         userId_channelId: { userId, channelId }
@@ -778,15 +800,15 @@ export const removeAdmin = async (req: FastifyRequest, res: FastifyReply) => {
     });
     
     if (!requester || !requester.isAdmin) {
-      return res.status(403).send({ message: '权限不足，您不是频道管理员' });
+      return res.status(403).send({ message: 'Insufficient permissions. You are not a channel admin' });
     }
     
-    // 不能移除自己的管理员权限
+    // Cannot remove your own admin privileges
     if (userId === parseInt(targetUserId as string)) {
-      return res.status(400).send({ message: '您不能移除自己的管理员权限' });
+      return res.status(400).send({ message: 'You cannot remove your own admin privileges' });
     }
     
-    // 获取目标用户信息
+    // Get target user info
     const targetUser = await prisma.user.findUnique({
       where: { id: parseInt(targetUserId as string) },
       select: {
@@ -797,10 +819,10 @@ export const removeAdmin = async (req: FastifyRequest, res: FastifyReply) => {
     });
     
     if (!targetUser) {
-      return res.status(404).send({ message: '目标用户不存在' });
+      return res.status(404).send({ message: 'Target user not found' });
     }
     
-    // 更新目标用户的管理员状态
+    // Update target user's admin status
     await prisma.channelMember.update({
       where: {
         userId_channelId: { 
@@ -811,13 +833,13 @@ export const removeAdmin = async (req: FastifyRequest, res: FastifyReply) => {
       data: { isAdmin: false }
     });
     
-    // 获取频道成员列表
+    // Get channel members list
     const channelMembers = await prisma.channelMember.findMany({
       where: { channelId },
       select: { userId: true }
     });
     
-    // 通知频道成员管理员变更
+    // Notify channel members about admin change
     const adminChangeNotification = {
       type: 'channel_admin_changed',
       channelId,
@@ -827,33 +849,33 @@ export const removeAdmin = async (req: FastifyRequest, res: FastifyReply) => {
       changedBy: requester.user.displayName
     };
     
-    // 向所有在线成员发送通知
+    // Send notification to all online members
     channelMembers.forEach((member: { userId: number }) => {
       const memberSocket = onlineUsers.get(member.userId);
       if (memberSocket && memberSocket.readyState === 1) {
         try {
           memberSocket.send(JSON.stringify(adminChangeNotification));
-          console.log(`已通知用户 ${member.userId} 关于用户 ${targetUserId} 被移除管理员权限`);
+          console.log(`Notified user ${member.userId} about user ${targetUserId} being removed from admin`);
         } catch (err) {
-          console.error(`通知用户 ${member.userId} 失败:`, err);
+          console.error(`Failed to notify user ${member.userId}:`, err);
         }
       }
     });
     
-    return res.send({ message: '已成功移除管理员权限' });
+    return res.send({ message: 'Admin privileges successfully removed' });
   } catch (error) {
-    return res.status(500).send({ message: '移除管理员权限失败', error });
+    return res.status(500).send({ message: 'Failed to remove admin privileges', error });
   }
 };
 
-// 获取频道消息
+// Get channel messages
 export const getChannelMessages = async (req: FastifyRequest, res: FastifyReply) => {
   const { channelId } = req.params as any;
   const userId = (req.user as any).id;
   const prisma = (req.server as any).prisma;
   
   try {
-    // 验证用户是否在频道中
+    // Verify if user is in channel
     const member = await prisma.channelMember.findUnique({
       where: {
         userId_channelId: { userId, channelId: channelId as string }
@@ -861,15 +883,15 @@ export const getChannelMessages = async (req: FastifyRequest, res: FastifyReply)
     });
     
     if (!member) {
-      return res.status(403).send({ message: '您不是该频道成员' });
+      return res.status(403).send({ message: 'You are not a member of this channel' });
     }
     
-    // 获取频道信息
+    // Get channel info
     const channel = await prisma.channel.findUnique({
       where: { id: channelId as string }
     });
     
-    // 获取频道成员
+    // Get channel members
     const members = await prisma.channelMember.findMany({
       where: { channelId: channelId as string },
       include: {
@@ -883,7 +905,7 @@ export const getChannelMessages = async (req: FastifyRequest, res: FastifyReply)
       }
     });
     
-    // 获取最近的消息
+    // Get recent messages
     const messages = await prisma.channelMessage.findMany({
       where: { channelId: channelId as string },
       orderBy: { createdAt: 'asc' },
@@ -912,22 +934,22 @@ export const getChannelMessages = async (req: FastifyRequest, res: FastifyReply)
       messages
     });
   } catch (error: any) {
-    console.error('获取频道消息错误:', error);
+    console.error('Error getting channel messages:', error);
     return res.status(500).send({ 
-      message: '获取频道消息失败', 
+      message: 'Failed to get channel messages', 
       error: error.message 
     });
   }
 };
 
-// 退出频道
+// Leave channel
 export const leaveChannel = async (req: FastifyRequest, res: FastifyReply) => {
   const { channelId } = req.params as any;
   const userId = (req.user as any).id;
   const prisma = (req.server as any).prisma;
   
   try {
-    // 检查用户是否在频道中
+    // Check if user is in channel
     const member = await prisma.channelMember.findUnique({
       where: {
         userId_channelId: { userId, channelId: channelId as string }
@@ -935,10 +957,10 @@ export const leaveChannel = async (req: FastifyRequest, res: FastifyReply) => {
     });
     
     if (!member) {
-      return res.status(404).send({ message: '您不在此频道中' });
+      return res.status(404).send({ message: 'You are not in this channel' });
     }
     
-    // 检查是否为唯一管理员
+    // Check if sole admin
     if (member.isAdmin) {
       const adminCount = await prisma.channelMember.count({
         where: {
@@ -948,7 +970,7 @@ export const leaveChannel = async (req: FastifyRequest, res: FastifyReply) => {
       });
       
       if (adminCount === 1) {
-        // 找出频道中加入时间最长的非管理员成员
+        // Find oldest non-admin member in channel
         const oldestMember = await prisma.channelMember.findFirst({
           where: {
             channelId: channelId as string,
@@ -958,7 +980,7 @@ export const leaveChannel = async (req: FastifyRequest, res: FastifyReply) => {
         });
         
         if (oldestMember) {
-          // 将该成员设为新管理员
+          // Set that member as new admin
           await prisma.channelMember.update({
             where: { id: oldestMember.id },
             data: { isAdmin: true }
@@ -967,14 +989,34 @@ export const leaveChannel = async (req: FastifyRequest, res: FastifyReply) => {
       }
     }
     
-    // 退出频道
+    // Leave channel
     await prisma.channelMember.delete({
       where: {
         userId_channelId: { userId, channelId: channelId as string }
       }
     });
     
-    // 获取用户信息
+    // 检查频道是否还有其他成员，如果没有则删除频道
+    const remainingMemberCount = await prisma.channelMember.count({
+      where: { channelId: channelId as string }
+    });
+    
+    if (remainingMemberCount === 0) {
+      // 删除该频道的所有消息
+      await prisma.channelMessage.deleteMany({
+        where: { channelId: channelId as string }
+      });
+      
+      // 删除频道
+      await prisma.channel.delete({
+        where: { id: channelId as string }
+      });
+      
+      console.log(`Channel ${channelId} has been deleted because it has no more members`);
+      return res.send({ message: 'Successfully left channel. Channel has been deleted because you were the last member.' });
+    }
+    
+    // Get user info
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -984,37 +1026,35 @@ export const leaveChannel = async (req: FastifyRequest, res: FastifyReply) => {
       }
     });
     
-    // 获取频道中剩余的成员
+    // Get remaining channel members
     const remainingMembers = await prisma.channelMember.findMany({
       where: { channelId: channelId as string },
       select: { userId: true }
     });
     
-    // 通知频道中的所有在线成员用户已离开
+    // Notify all online channel members user has left
     const leaveNotification = {
       type: 'channel_user_left',
       channelId,
       userId,
-      displayName: user?.displayName || '未知用户'
+      displayName: user?.displayName || 'Unknown user'
     };
     
-    // 使用onlineUsers向频道内其他成员发送通知
+    // Send notification to channel members
     remainingMembers.forEach((member: { userId: number }) => {
       const memberSocket = onlineUsers.get(member.userId);
       if (memberSocket && memberSocket.readyState === 1) {
         try {
           memberSocket.send(JSON.stringify(leaveNotification));
-          console.log(`已通知用户 ${member.userId} 关于用户 ${userId} 离开频道`);
+          console.log(`Notified user ${member.userId} about user ${userId} leaving channel`);
         } catch (err) {
-          console.error(`通知用户 ${member.userId} 失败:`, err);
+          console.error(`Failed to notify user ${member.userId}:`, err);
         }
       }
     });
     
-    return res.send({ message: '已成功退出频道' });
+    return res.send({ message: 'Successfully left channel' });
   } catch (error) {
-    return res.status(500).send({ message: '退出频道失败', error });
+    return res.status(500).send({ message: 'Failed to leave channel', error });
   }
 };
-
-// 其他必要的功能...
