@@ -1,4 +1,6 @@
 // src/ws/globalSocket.ts
+import { t } from '../State/i18n';
+
 type WSCallback = (data: any) => void;
 
 interface WSListeners {
@@ -8,6 +10,18 @@ interface WSListeners {
   game_invitation: WSCallback[];
   game_invitation_sent: WSCallback[];
   game_invitation_response: WSCallback[];
+
+    // 新增频道相关事件
+	channel_message: WSCallback[];      // 频道消息
+	channel_user_joined: WSCallback[];  // 用户加入频道
+	channel_user_left: WSCallback[];    // 用户离开频道
+	channel_user_kicked: WSCallback[];  // 用户被踢出
+	channel_user_muted: WSCallback[];   // 用户被禁言
+	channel_user_unmuted: WSCallback[]; // 用户被解除禁言
+	channel_admin_changed: WSCallback[]; // 管理员变更
+	you_were_kicked: WSCallback[];     // 当前用户被踢出
+	you_were_muted: WSCallback[];      // 当前用户被禁言
+	you_were_unmuted: WSCallback[];    // 当前用户被解除禁言
 }
 
 export class GlobalSocket {
@@ -18,7 +32,17 @@ export class GlobalSocket {
 	  message_sent: [],
 	  game_invitation: [],
 	  game_invitation_sent: [],
-	  game_invitation_response: []
+	  game_invitation_response: [],
+	  channel_message: [],
+	  channel_user_joined: [],
+	  channel_user_left: [],
+	  channel_user_kicked: [],
+	  channel_user_muted: [],
+	  channel_user_unmuted: [],
+	  channel_admin_changed: [],
+	  you_were_kicked: [],
+	  you_were_muted: [],
+	  you_were_unmuted: []
 	};
 	private userId: number;
 	private pingIntervalId: ReturnType<typeof setInterval> | null = null;
@@ -50,61 +74,58 @@ export class GlobalSocket {
   
 	private init() {
 	  if (this.socket && this.socket.readyState <= 1) {
-	    console.log('[GlobalSocket] WebSocket已经存在且连接中，跳过初始化');
+	    console.log(t('websocket.already_connected'));
 	    return;
 	  }
 	  
 	  if (this.manuallyClosed) {
-	    console.log('[GlobalSocket] WebSocket已手动关闭，跳过重连');
+	    console.log(t('websocket.connection_closed'));
 	    return;
 	  }
 	  
 	  try {
-	    console.log(`[GlobalSocket] 初始化WebSocket连接，用户ID: ${this.userId}, 尝试次数: ${this.reconnectAttempts + 1}`);
+	    console.log(t('websocket.connection_init'));
 	    this.socket = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://localhost:3000/ws/presence`);
-	    
+    
 	    this.socket.addEventListener('open', () => {
-	      this.connectionStartTime = Date.now();
-	      console.log(`[GlobalSocket] WebSocket已连接，用户ID: ${this.userId}`);
-	      
-	      // 重置重连计数器
-	      this.reconnectAttempts = 0;
+	      console.log(t('websocket.connection_open'));
 	      
 	      // 发送上线消息
 	      this.socket?.send(JSON.stringify({ type: 'online', userId: this.userId }));
 	      
 	      // 发送队列中的消息
-	      if (this.messageQueue.length > 0) {
-	        console.log(`[GlobalSocket] 发送${this.messageQueue.length}条排队消息`);
-	        while (this.messageQueue.length > 0) {
-	          const message = this.messageQueue.shift();
-	          this.send(message);
+	      this.messageQueue.forEach(msg => {
+	        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+	          this.socket.send(JSON.stringify(msg));
 	        }
-	      }
-	  
-	      // 设置心跳保持连接
+	      });
+	      
+	      // 清空队列
+	      this.messageQueue = [];
+	      
+	      // 设置定时ping来保持连接
 	      if (this.pingIntervalId) {
 	        clearInterval(this.pingIntervalId);
 	      }
 	      
 	      this.pingIntervalId = setInterval(() => {
 	        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-	          console.log('[GlobalSocket] 发送Ping保持连接');
+	          console.log(t('websocket.ping_sent'));
 	          this.socket.send(JSON.stringify({ type: 'ping' }));
 	        }
-	      }, 30000);
+	      }, 30000); // 每30秒ping一次
 	    });
-	  
+	    
 	    this.socket.addEventListener('close', (event) => {
 	      console.log(`[GlobalSocket] WebSocket连接关闭，代码: ${event.code}, 原因: ${event.reason || '未知'}`);
-	  
+	    
 	      if (this.pingIntervalId) {
 	        clearInterval(this.pingIntervalId);
 	        this.pingIntervalId = null;
 	      }
-	  
+	    
 	      this.socket = null;
-	  
+	    
 	      // 如果不是手动关闭，则尝试重连
 	      if (!this.manuallyClosed) {
 	        this.reconnectAttempts++;
@@ -125,7 +146,7 @@ export class GlobalSocket {
 	        }
 	      }
 	    });
-	  
+	    
 	    this.socket.addEventListener('message', (event) => {
 	      try {
 	        const data = JSON.parse(event.data);
@@ -149,20 +170,50 @@ export class GlobalSocket {
 	        } else if (data.type === 'game_invitation_response') {
 	          console.log(`[GlobalSocket] 收到游戏邀请回应: ${data.response}`);
 	          this.listeners.game_invitation_response.forEach((cb) => cb(data));
+	        } else if (data.type === 'channel_message') {
+	          console.log(`[GlobalSocket] 收到频道消息: 频道${data.channelId}`);
+	          this.listeners.channel_message.forEach((cb) => cb(data));
+	        } else if (data.type === 'channel_user_joined') {
+	          console.log(t('websocket.channel_message.received'));
+	          this.listeners.channel_user_joined.forEach((cb) => cb(data));
+	        } else if (data.type === 'channel_user_left') {
+	          console.log(t('websocket.channel_message.received'));
+	          this.listeners.channel_user_left.forEach((cb) => cb(data));
+	        } else if (data.type === 'channel_user_kicked') {
+	          console.log(t('websocket.channel_message.received'));
+	          this.listeners.channel_user_kicked.forEach((cb) => cb(data));
+	        } else if (data.type === 'channel_user_muted') {
+	          console.log(t('websocket.channel_message.received'));
+	          this.listeners.channel_user_muted.forEach((cb) => cb(data));
+	        } else if (data.type === 'channel_user_unmuted') {
+	          console.log(t('websocket.channel_message.received'));
+	          this.listeners.channel_user_unmuted.forEach((cb) => cb(data));
+	        } else if (data.type === 'channel_admin_changed') {
+	          console.log(t('websocket.channel_message.received'));
+	          this.listeners.channel_admin_changed.forEach((cb) => cb(data));
+	        } else if (data.type === 'you_were_kicked') {
+	          console.log(t('websocket.channel_message.received'));
+	          this.listeners.you_were_kicked.forEach((cb) => cb(data));
+	        } else if (data.type === 'you_were_muted') {
+	          console.log(t('websocket.channel_message.received'));
+	          this.listeners.you_were_muted.forEach((cb) => cb(data));
+	        } else if (data.type === 'you_were_unmuted') {
+	          console.log(t('websocket.channel_message.received'));
+	          this.listeners.you_were_unmuted.forEach((cb) => cb(data));
 	        } else {
-	          console.log(`[GlobalSocket] 收到未知类型消息: ${data.type}`);
+	          console.log(t('websocket.invalid_message') + ': ' + data.type);
 	        }
 	      } catch (err) {
-	        console.error('[GlobalSocket] 消息解析错误:', err);
+	        console.error(t('websocket.invalid_message'), err);
 	      }
 	    });
-	  
+	    
 	    this.socket.addEventListener('error', (err) => {
-	      console.error('[GlobalSocket] WebSocket错误:', err);
+	      console.error(t('websocket.connection_error'), err);
 	    });
 	    
 	  } catch (err) {
-	    console.error('[GlobalSocket] 创建WebSocket连接时出错:', err);
+	    console.error(t('websocket.connection_error'), err);
 	    // 过一段时间后重试
 	    setTimeout(() => this.init(), 5000);
 	  }
@@ -189,7 +240,24 @@ export class GlobalSocket {
 	  // 如果WebSocket已连接，直接发送
 	  if (this.socket && this.socket.readyState === WebSocket.OPEN) {
 	    try {
-	      const message = typeof data === 'string' ? data : JSON.stringify(data);
+	      // 确保消息正确序列化
+	      let message: string;
+	      if (typeof data === 'string') {
+	        message = data;
+	      } else {
+	        // 记录消息类型便于调试
+	        const msgType = data.type || 'unknown';
+	        console.log(`[GlobalSocket] 准备发送${msgType}类型消息`);
+	        
+	        // 确保channelId是字符串类型（如果存在）
+	        if (data.type === 'channel_message' && data.channelId) {
+	          data.channelId = String(data.channelId);
+	          console.log(`[GlobalSocket] 发送频道消息到频道 ${data.channelId}`);
+	        }
+	        
+	        message = JSON.stringify(data);
+	      }
+	      
 	      console.log(`[GlobalSocket] 发送消息: ${data.type || 'unknown type'}`);
 	      this.socket.send(message);
 	    } catch (err) {
@@ -276,4 +344,8 @@ export function initGlobalSocket(userId: number): GlobalSocket {
 	}
   
 	return globalSocket;
+}  
+
+export function getSocket() {
+  return window.globalSocket;
 }  

@@ -74,13 +74,34 @@ export function render() {
 
       const historyContainer = document.getElementById('matchList')
       if (historyContainer) {
-        historyContainer.innerHTML = matches.map((m: any) => `
+        historyContainer.innerHTML = matches.map((m: any) => {
+          // 判断是否为AI Bot或Guest用户
+          const isAIBot = m.user2.email === 'ai@fake.com' || m.user1.email === 'ai@fake.com';
+          const isGuest = m.user2.email === 'guest@fake.com' || m.user1.email === 'guest@fake.com';
+          
+          // 为特殊用户添加样式
+          let user1Class = '';
+          let user2Class = '';
+          
+          if (m.user1.email === 'ai@fake.com') {
+            user1Class = 'text-red-400 font-bold';
+          } else if (m.user1.email === 'guest@fake.com') {
+            user1Class = 'text-green-400 font-bold';
+          }
+          
+          if (m.user2.email === 'ai@fake.com') {
+            user2Class = 'text-red-400 font-bold';
+          } else if (m.user2.email === 'guest@fake.com') {
+            user2Class = 'text-green-400 font-bold';
+          }
+          
+          return `
           <div class="flex justify-between items-center border-b border-white/10 pb-2">
             <div class="flex items-center gap-2">
               <img class="w-8 h-8 rounded-full" src="${m.user1.avatarUrl}" alt="left">
-              <span class="text-sm">${m.user1.displayName}</span>
+              <span class="text-sm ${user1Class}">${m.user1.displayName}</span>
               <span class="text-gray-400 text-xs">${t('history.vs')}</span>
-              <span class="text-sm">${m.user2.displayName}</span>
+              <span class="text-sm ${user2Class}">${m.user2.displayName}</span>
               <img class="w-8 h-8 rounded-full" src="${m.user2.avatarUrl}" alt="right">
             </div>
             <div class="text-right">
@@ -88,7 +109,7 @@ export function render() {
               <p class="text-sm font-bold text-white">${m.score1} : ${m.score2}</p>
             </div>
           </div>
-        `).join('')
+        `}).join('')
       }
 
       const yourScores = []

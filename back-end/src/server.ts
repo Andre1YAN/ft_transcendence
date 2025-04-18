@@ -14,6 +14,8 @@ import { initGuestUser } from './utils/initGuestUser'
 import { registerJwt } from './utils/jwt'
 import { setupPresenceSocket } from './ws/presence'
 import { messageRoutes } from './route/messageRoutes'
+import channelRoutes from './route/channelRoutes'
+import { setupChannelJobs } from './jobs/channelJobs'
 
 const fastify = Fastify({
   logger: true,
@@ -41,6 +43,10 @@ async function buildServer() {
   await setupPresenceSocket(fastify)
   await fastify.register(twofaRoutes)
   await fastify.register(messageRoutes)
+  await fastify.register(channelRoutes, { prefix: '/api/channels' })
+  
+  // 初始化频道相关定时任务
+  setupChannelJobs()
 
   return fastify
 }

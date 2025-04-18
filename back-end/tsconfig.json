@@ -2,7 +2,7 @@
 	"compilerOptions": {
 	  "target": "es2020",
 	  "module": "commonjs",
-	  "rootDir": "./",
+	  "rootDir": "./src",
 	  "outDir": "./dist",
 	  /* Visit https://aka.ms/tsconfig to read more about this file */
   

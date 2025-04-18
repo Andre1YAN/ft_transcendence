@@ -22,6 +22,9 @@ export function renderNavbar() {
             <button class="w-full text-left px-4 py-2 text-white hover:bg-purple-500/20 transition rounded-t-xl" data-mode="local">
               ${t('navbar.local')}
             </button>
+			<button class="w-full text-left px-4 py-2 text-white hover:bg-purple-500/20 transition" data-mode="ai_game">
+			🤖 ${t('navbar.aiGame')}
+			</button>
             <button class="w-full text-left px-4 py-2 text-white hover:bg-purple-500/20 transition rounded-b-xl" data-mode="tournament">
               ${t('navbar.tournament')}
             </button>
@@ -80,7 +83,9 @@ export function bindNavbarEvents() {
           location.hash = '#/tournament_setup'
         } else if (mode === 'local') {
           location.hash = '#/local'
-        }
+        } else if (mode === 'ai_game') {
+  		  location.hash = '#/ai_game'
+		}
     
         // 更新 UI 状态
         dropdownMenu.classList.add('hidden')
