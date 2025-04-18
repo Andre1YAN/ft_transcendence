@@ -76,8 +76,8 @@ export function render() {
       if (historyContainer) {
         historyContainer.innerHTML = matches.map((m: any) => {
           // 判断是否为AI Bot或Guest用户
-          const isAIBot = m.user2.email === 'ai@fake.com' || m.user1.email === 'ai@fake.com';
-          const isGuest = m.user2.email === 'guest@fake.com' || m.user1.email === 'guest@fake.com';
+          //const isAIBot = m.user2.email === 'ai@fake.com' || m.user1.email === 'ai@fake.com';
+          //const isGuest = m.user2.email === 'guest@fake.com' || m.user1.email === 'guest@fake.com';
           
           // 为特殊用户添加样式
           let user1Class = '';

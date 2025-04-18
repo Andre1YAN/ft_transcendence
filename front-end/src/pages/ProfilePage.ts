@@ -1,6 +1,7 @@
 import { initStars } from '../components/initStars'
 import { t } from '../State/i18n'
 import { renderLanguageSwitcher, bindLanguageSwitcher } from '../components/LanguageSwitcher'
+import { MatchHistoryDto } from '../types/match.dto'
 
 export function render() {
   const user = JSON.parse(localStorage.getItem('user') || 'null')
@@ -92,7 +93,7 @@ fetch(`http://localhost:3000/users/${user.id}/matches`, {
 	let wins = 0
 let losses = 0
 
-matches.forEach((match) => {
+matches.forEach((match: MatchHistoryDto) => {
   const isUser1 = match.user1.id === user.id
   const myScore = isUser1 ? match.score1 : match.score2
   const oppScore = isUser1 ? match.score2 : match.score1

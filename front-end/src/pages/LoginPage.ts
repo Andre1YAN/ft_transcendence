@@ -102,10 +102,11 @@ export function render() {
 	  // ✅ 否则直接登录成功
 	  localStorage.setItem('user', JSON.stringify(data.user || data)) // 兼容老结构
 	  localStorage.setItem('authToken', data.token)
-	  window.user = data.user || data
-		window.globalSocket = initGlobalSocket(window.user.id)
+	  const currentUser = data.user || data
+    window.user = currentUser
+    window.globalSocket = initGlobalSocket(currentUser.id)
 
-		alert(`Welcome back, ${window.user.displayName || 'Player'}!`)
+		alert(`Welcome back, ${currentUser.displayName || 'Player'}!`)
 	  location.hash = '#/main'
   
 	} catch (err: any) {
