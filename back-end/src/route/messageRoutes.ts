@@ -193,7 +193,8 @@ export async function messageRoutes(fastify: FastifyInstance) {
         });
       } catch (error) {
         console.error('Error updating invitation status:', error);
-        return reply.code(500).send({ message: 'Failed to update invitation status', error: error.message });
+        const err = error as Error
+        return reply.code(500).send({ message: 'Failed to update invitation status', error: err.message });
       }
     }
   });

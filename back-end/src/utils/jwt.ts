@@ -1,12 +1,14 @@
 import fastifyJwt from '@fastify/jwt'
 import { FastifyInstance, FastifyReply, FastifyRequest } from "fastify"
 import jwt from 'jsonwebtoken'
+import { SignOptions } from 'jsonwebtoken'
 
-const JWT_SECRET = process.env.JWT_SECRET || "fake secret"
+const JWT_SECRET = process.env.JWT_SECRET || 'fake secret'
 
-export function signToken(payload: object, expiresIn: string | number = '1h') {
+export function signToken(payload: object, expiresIn: SignOptions['expiresIn'] = '1h') {
   return jwt.sign(payload, JWT_SECRET, { expiresIn })
 }
+
 
 export function verifyToken(token: string) {
   return jwt.verify(token, JWT_SECRET)

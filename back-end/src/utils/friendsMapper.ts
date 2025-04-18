@@ -10,6 +10,7 @@ export function toFriendsListDto(friend: any, isOnline: boolean): FriendsListDto
     id: friend.id,
     name: friend.displayName,
     avatarUrl: friend.avatarUrl || `https://i.pravatar.cc/50?u=${friend.displayName}`,
-    online: isOnline
+    online: isOnline,
+    blocked: friend.blocked ?? false  // ✅ 加上这个字段（如果 friend 没有 blocked，默认 false）
   }
 }

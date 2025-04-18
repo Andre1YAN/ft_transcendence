@@ -1,28 +1,18 @@
-# Makefile for ft_transcendence
-
-# 默认文件
-DC = docker-compose
-DC_FILE = -f docker-compose.yml
-
-# 默认目标
-.PHONY: build up down restart logs bash clean
-
-build:
-	$(DC) $(DC_FILE) build
+.PHONY: up down restart logs build
 
 up:
-	$(DC) $(DC_FILE) up -d
+	docker-compose up -d
 
 down:
-	$(DC) $(DC_FILE) down
+	docker-compose down
 
-restart: down up
+restart:
+	docker-compose down
+	docker-compose build
+	docker-compose up -d
 
 logs:
-	$(DC) $(DC_FILE) logs -f
+	docker-compose logs -f
 
-bash:
-	$(DC) $(DC_FILE) exec backend sh
-
-clean:
-	$(DC) $(DC_FILE) down -v --remove-orphans
+build:
+	docker-compose build
