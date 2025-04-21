@@ -74,19 +74,19 @@ export function bindNavbarEvents() {
       item.addEventListener('click', (e) => {
         const el = e.target as HTMLElement
         const mode = el.getAttribute('data-mode')
-    
+
         if (!mode) return
         setMode(mode as any)
-    
+
         // 正确的路由跳转
         if (mode === 'tournament') {
           location.hash = '#/tournament_setup'
         } else if (mode === 'local') {
           location.hash = '#/local'
         } else if (mode === 'ai_game') {
-  		  location.hash = '#/ai_game'
-		}
-    
+          location.hash = '#/ai_game'
+        }
+
         // 更新 UI 状态
         dropdownMenu.classList.add('hidden')
         dropdownBtn.innerHTML = `${t('navbar.gameMode')} ⌄`
@@ -126,24 +126,22 @@ export function bindNavbarEvents() {
         if (tab) {
           if (tab === 'logout') {
             // 登出操作：关闭全局 WebSocket 连接，清空本地登录信息，并跳转到登录页
-			if (
-				window.globalSocket &&
-				window.globalSocket.getSocket() &&
-				window.globalSocket.getSocket().readyState === WebSocket.OPEN
-			  ) {
-				window.globalSocket.send({ type: 'offline', userId: window.user?.id })
-			  }
-			  window.globalSocket?.close()
-			  
-			  localStorage.removeItem('user')
-			  localStorage.removeItem('authToken')
-			  
-			  window.user = null
-			  window.globalSocket = null
-			  
-			  location.hash = '#/login'
-			}
-			   else {
+
+            const socket = window.globalSocket?.getSocket();
+            if (socket && socket.readyState === WebSocket.OPEN) {
+              window.globalSocket?.send({ type: 'offline', userId: window.user?.id });
+            }
+            window.globalSocket?.close()
+
+            localStorage.removeItem('user')
+            localStorage.removeItem('authToken')
+
+            window.user = null
+            window.globalSocket = null
+
+            location.hash = '#/login'
+          }
+          else {
             location.hash = `#/${tab}`
           }
         }

@@ -1,0 +1,27 @@
+
+
+services:
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=${PORT}
+      - DATABASE_URL=${DATABASE_URL}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - MAIL_USER=${MAIL_USER}
+      - MAIL_PASS=${MAIL_PASS}
+      - JWT_SECRET=${JWT_SECRET}
+      - LOGGER_ENABLED=${LOGGER_ENABLED}
+    volumes:
+      - ./back-end/prisma:/app/prisma
+      - ./back-end/certs:/app/certs:ro
+    networks:
+      - ft_transcendence
+
+networks:
+  ft_transcendence:

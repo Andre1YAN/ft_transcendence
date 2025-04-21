@@ -1,6 +1,9 @@
 import cors from '@fastify/cors'
 import 'dotenv/config'
+import fs from 'fs'
+import path from 'path'
 import Fastify from 'fastify'
+import fastifyStatic from '@fastify/static'
 import prismaPlugin from './plugins/prisma'
 import requestLogger from './plugins/requestLogger'
 import { authRoutes } from './route/authRoutes'
@@ -17,9 +20,15 @@ import { messageRoutes } from './route/messageRoutes'
 import channelRoutes from './route/channelRoutes'
 import { setupChannelJobs } from './jobs/channelJobs'
 
+const httpsOptions = {
+  key: fs.readFileSync(path.join(__dirname, '..', 'certs', 'key.pem')),
+  cert: fs.readFileSync(path.join(__dirname, '..', 'certs', 'cert.pem'))
+}
+
 const fastify = Fastify({
   logger: true,
   bodyLimit: 5 * 1024 * 1024,
+  https: httpsOptions,
 })
 
 async function buildServer() {
@@ -29,9 +38,14 @@ async function buildServer() {
   await fastify.register(requestLogger)
 
   await fastify.register(cors, {
-    origin: ['http://localhost:5173'],
+    origin: ['https://localhost:3000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  })
+
+  await fastify.register(fastifyStatic, {
+    root: path.join(__dirname, '..', 'public'),
+    prefix: '/',
   })
 
   await fastify.register(authRoutes)
@@ -48,12 +62,16 @@ async function buildServer() {
   // 初始化频道相关定时任务
   setupChannelJobs()
 
+  fastify.setNotFoundHandler((req, reply) => {
+    reply.sendFile('index.html')
+  })
+
   return fastify
 }
 
 buildServer().then((fastify) => {
   fastify.printRoutes()  // 打印出已注册的所有路由
-  fastify.listen({ port: 3000 }, (err, address) => {
+  fastify.listen({ port: 3000, host: '0.0.0.0' }, (err, address) => {
     if (err) {
       console.error(err)
       process.exit(1)

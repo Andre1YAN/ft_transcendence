@@ -38,7 +38,7 @@ export function initializeGoogleSignIn() {
   function handleCredentialResponse(response: { credential: string }) {
 	console.log('Received Google ID token:', response.credential);
 	// 将 token 发送给你的后端进行验证
-	fetch('http://localhost:3000/auth/google', {
+	fetch('https://localhost:3000/auth/google', {
 	  method: 'POST',
 	  headers: { 'Content-Type': 'application/json' },
 	  body: JSON.stringify({ idToken: response.credential })

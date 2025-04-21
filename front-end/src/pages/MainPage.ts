@@ -271,7 +271,7 @@ function loadChannels() {
   
   console.log(`[Debug] ${t('websocket.channel_message.loading')}`);
   
-  fetch('http://localhost:3000/api/channels/my-channels', {
+  fetch('https://localhost:3000/api/channels/my-channels', {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('authToken')}`
     }
@@ -427,7 +427,7 @@ function showCreateChannelDialog() {
       password: privateCheckbox.checked ? passwordInput.value : undefined
     }
     
-    fetch('http://localhost:3000/api/channels/create', {
+    fetch('https://localhost:3000/api/channels/create', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -504,7 +504,7 @@ function showSearchChannelDialog() {
     
     resultsContainer.innerHTML = `<p class="text-center py-2">${t('channel.loading')}</p>`
     
-    fetch(`http://localhost:3000/api/channels/search?query=${encodeURIComponent(query)}`, {
+    fetch(`https://localhost:3000/api/channels/search?query=${encodeURIComponent(query)}`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('authToken')}`
       }
@@ -569,7 +569,7 @@ function showSearchChannelDialog() {
     const passwordInput = document.getElementById('join-password') as HTMLInputElement
     const password = isPrivateChannel ? passwordInput.value : undefined
     
-    fetch('http://localhost:3000/api/channels/join', {
+    fetch('https://localhost:3000/api/channels/join', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -665,7 +665,7 @@ function loadChannelMessages(channelId: string) {
     window.globalSocket = initGlobalSocket(user.id)
   }
   
-  fetch(`http://localhost:3000/api/channels/${channelId}/messages`, {
+  fetch(`https://localhost:3000/api/channels/${channelId}/messages`, {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('authToken')}`
     }
@@ -970,7 +970,7 @@ function handleChannelUserJoined(data: any) {
   }
   
   // 重新加载频道信息以更新成员列表
-  fetch(`http://localhost:3000/api/channels/${currentChannelId}/messages`, {
+  fetch(`https://localhost:3000/api/channels/${currentChannelId}/messages`, {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('authToken')}`
     }
@@ -1009,7 +1009,7 @@ function handleChannelUserLeft(data: any) {
   }
   
   // 重新加载频道信息以更新成员列表
-  fetch(`http://localhost:3000/api/channels/${currentChannelId}/messages`, {
+  fetch(`https://localhost:3000/api/channels/${currentChannelId}/messages`, {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('authToken')}`
     }
@@ -1048,7 +1048,7 @@ function handleChannelUserKicked(data: any) {
   }
   
   // 重新加载频道信息以更新成员列表
-  fetch(`http://localhost:3000/api/channels/${currentChannelId}/messages`, {
+  fetch(`https://localhost:3000/api/channels/${currentChannelId}/messages`, {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('authToken')}`
     }
@@ -1168,7 +1168,7 @@ function updateChannelInfoBar(channelData: any) {
 function handleLeaveChannel(channelId: string) {
   if (!confirm(t('channel.leave_confirm'))) return;
   
-  fetch(`http://localhost:3000/api/channels/${channelId}/leave`, {
+  fetch(`https://localhost:3000/api/channels/${channelId}/leave`, {
     method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('authToken')}`
@@ -1285,7 +1285,7 @@ function handleChannelAdminChanged(data: any) {
   }
   
   // 重新加载频道信息以更新成员列表
-  fetch(`http://localhost:3000/api/channels/${currentChannelId}/messages`, {
+  fetch(`https://localhost:3000/api/channels/${currentChannelId}/messages`, {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('authToken')}`
     }
@@ -1388,7 +1388,7 @@ function showChannelSettings(channelId: string, channelData: any) {
     const newPassword = prompt(t('channel.enter_password'))
     if (newPassword === null) return
     
-    fetch('http://localhost:3000/api/channels/set-password', {
+    fetch('https://localhost:3000/api/channels/set-password', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1416,7 +1416,7 @@ function showChannelSettings(channelId: string, channelData: any) {
   document.getElementById('remove-password-btn')?.addEventListener('click', () => {
     if (!confirm(t('channel.remove_password_confirm'))) return
     
-    fetch('http://localhost:3000/api/channels/set-password', {
+    fetch('https://localhost:3000/api/channels/set-password', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1457,7 +1457,7 @@ function showChannelSettings(channelId: string, channelData: any) {
     
     // 设为管理员
     if (actionButton.classList.contains('set-admin-btn')) {
-      fetch('http://localhost:3000/api/channels/set-admin', {
+      fetch('https://localhost:3000/api/channels/set-admin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1482,7 +1482,7 @@ function showChannelSettings(channelId: string, channelData: any) {
     
     // 取消管理员
     if (actionButton.classList.contains('remove-admin-btn')) {
-      fetch('http://localhost:3000/api/channels/remove-admin', {
+      fetch('https://localhost:3000/api/channels/remove-admin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1510,7 +1510,7 @@ function showChannelSettings(channelId: string, channelData: any) {
       const duration = prompt(t('channel.enter_mute_duration'), '30')
       if (!duration) return
       
-      fetch('http://localhost:3000/api/channels/mute', {
+      fetch('https://localhost:3000/api/channels/mute', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1536,7 +1536,7 @@ function showChannelSettings(channelId: string, channelData: any) {
     
     // 解除禁言
     if (actionButton.classList.contains('unmute-btn')) {
-      fetch('http://localhost:3000/api/channels/unmute', {
+      fetch('https://localhost:3000/api/channels/unmute', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1563,7 +1563,7 @@ function showChannelSettings(channelId: string, channelData: any) {
     if (actionButton.classList.contains('kick-btn')) {
       if (!confirm(t('channel.kick_confirm_general'))) return
       
-      fetch('http://localhost:3000/api/channels/kick', {
+      fetch('https://localhost:3000/api/channels/kick', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1614,7 +1614,7 @@ function handleChannelUserMuted(data: any) {
   }
   
   // 重新加载频道信息以更新成员列表
-  fetch(`http://localhost:3000/api/channels/${currentChannelId}/messages`, {
+  fetch(`https://localhost:3000/api/channels/${currentChannelId}/messages`, {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('authToken')}`
     }
@@ -1653,7 +1653,7 @@ function handleChannelUserUnmuted(data: any) {
   }
   
   // 重新加载频道信息以更新成员列表
-  fetch(`http://localhost:3000/api/channels/${currentChannelId}/messages`, {
+  fetch(`https://localhost:3000/api/channels/${currentChannelId}/messages`, {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('authToken')}`
     }

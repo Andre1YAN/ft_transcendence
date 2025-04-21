@@ -229,7 +229,7 @@ export const joinChannel = async (req: FastifyRequest, res: FastifyReply) => {
 export const getUserChannels = async (req: FastifyRequest, res: FastifyReply) => {
   const userId = (req.user as any).id;
   const prisma = (req.server as any).prisma;
-  
+
   try {
     const channelMembers = await prisma.channelMember.findMany({
       where: { userId },

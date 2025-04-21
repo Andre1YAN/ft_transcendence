@@ -26,7 +26,7 @@ export function render() {
   async function verifyGuestUserId() {
     try {
       // 取消前面添加的注释，修改邮箱地址
-      const response = await fetch('http://localhost:3000/users/special?email=guest@fake.com', {
+      const response = await fetch('https://localhost:3000/users/special?email=guest@fake.com', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
       });
       if (response.ok) {
@@ -190,7 +190,7 @@ export function render() {
           };
           console.log('Match data to send:', matchData);
           
-          const res = await fetch('http://localhost:3000/users/matches', {
+          const res = await fetch('https://localhost:3000/users/matches', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('authToken')}`},
             body: JSON.stringify(matchData)
@@ -268,7 +268,7 @@ export function render() {
         searchResult.innerHTML = `<p class="text-blue-400">${t('local.searching')}...</p>`
         searchResult.classList.remove('hidden')
         
-        const response = await fetch(`http://localhost:3000/users/search?name=${encodeURIComponent(name)}`, {
+        const response = await fetch(`https://localhost:3000/users/search?name=${encodeURIComponent(name)}`, {
           headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
         })
         

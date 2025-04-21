@@ -37,7 +37,7 @@ export function render() {
 	  }
   
 	  try {
-		const res = await fetch('http://localhost:3000/auth/2fa/verify', {
+		const res = await fetch('https://localhost:3000/auth/2fa/verify', {
 		  method: 'POST',
 		  headers: { 'Content-Type': 'application/json' },
 		  body: JSON.stringify({ userId: Number(userId), code })
