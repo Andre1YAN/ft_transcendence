@@ -145,8 +145,8 @@ function bindFriendEvents(currentUserId: number) {
 	
 		try {
 		  const url = isUnblock
-			? `http://localhost:3000/users/block/${friendId}`
-			: 'http://localhost:3000/users/block'
+			? `https://localhost:3000/users/block/${friendId}`
+			: 'https://localhost:3000/users/block'
 	
 		  console.log(`[${isUnblock ? 'UNBLOCK' : 'BLOCK'}] sending request to ${url}`)
 	
@@ -190,7 +190,7 @@ function bindFriendEvents(currentUserId: number) {
     }
 
     try {
-      const res = await fetch('http://localhost:3000/users/friends', {
+      const res = await fetch('https://localhost:3000/users/friends', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('authToken')}` },
         body: JSON.stringify({ displayName: name })
@@ -231,7 +231,7 @@ function bindDeleteEvents(currentUserId: number) {
       e.stopPropagation()
       const friendId = Number(btn.getAttribute('data-id'))
       try {
-        const res = await fetch(`http://localhost:3000/users/friends/${friendId}`, {
+        const res = await fetch(`https://localhost:3000/users/friends/${friendId}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` },
         })
@@ -254,7 +254,7 @@ function bindDeleteEvents(currentUserId: number) {
 
 async function fetchFriends(userId: number) {
   try {
-    const res = await fetch(`http://localhost:3000/users/${userId}/friends`, {
+    const res = await fetch(`https://localhost:3000/users/${userId}/friends`, {
       method: 'GET',
       headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
     })
@@ -276,7 +276,7 @@ async function fetchFriends(userId: number) {
 async function sendMessage(receiverId: number, content: string, metadata?: any) {
   try {
     console.log(`发送消息 - 接收者: ${receiverId}, 内容: ${content}${metadata ? ', 包含元数据' : ''}`);
-    const response = await fetch(`http://localhost:3000/messages`, {
+    const response = await fetch(`https://localhost:3000/messages`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -374,7 +374,7 @@ async function loadMessages(userId: number, friendId: number) {
       box.innerHTML = '<div class="text-center text-gray-400">Loading...</div>';
     }
     
-    const res = await fetch(`http://localhost:3000/messages/${friendId}`, {
+    const res = await fetch(`https://localhost:3000/messages/${friendId}`, {
       headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
     });
     const messages = await res.json();
@@ -691,7 +691,7 @@ function showFriendProfile(friendId: number, friendName: string, avatarUrl: stri
 // 获取好友的比赛记录
 async function fetchFriendMatchHistory(friendId: number) {
   try {
-    const res = await fetch(`http://localhost:3000/users/${friendId}/matches`, {
+    const res = await fetch(`https://localhost:3000/users/${friendId}/matches`, {
       method: "GET",
       headers: {'Authorization': `Bearer ${localStorage.getItem('authToken')}`}
     });
@@ -1054,7 +1054,7 @@ async function respondToGameInvitation(invitationId: string, senderId: number, i
   try {
     // 1. 更新消息元数据，将状态持久化到数据库
     console.log(`更新邀请状态到数据库 - invitationId: ${invitationId}, 状态: ${status}`);
-    const response = await fetch(`http://localhost:3000/messages/invitation/${invitationId}`, {
+    const response = await fetch(`https://localhost:3000/messages/invitation/${invitationId}`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
@@ -1131,7 +1131,7 @@ async function updateInvitationStatus(invitationId: string, status: InvitationSt
   
   while (retries > 0) {
     try {
-      const res = await fetch(`http://localhost:3000/messages/invitation/${invitationId}`, {
+      const res = await fetch(`https://localhost:3000/messages/invitation/${invitationId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

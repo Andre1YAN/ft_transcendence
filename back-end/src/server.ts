@@ -4,7 +4,6 @@ import fs from 'fs'
 import path from 'path'
 import Fastify from 'fastify'
 import fastifyStatic from '@fastify/static'
-import fastifyCompress from '@fastify/compress'
 import prismaPlugin from './plugins/prisma'
 import requestLogger from './plugins/requestLogger'
 import { authRoutes } from './route/authRoutes'
@@ -39,12 +38,11 @@ async function buildServer() {
   await fastify.register(requestLogger)
 
   await fastify.register(cors, {
-    origin: ['http://localhost:3000'],
+    origin: ['https://localhost:3000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   })
 
-  await fastify.register(fastifyCompress)
   await fastify.register(fastifyStatic, {
     root: path.join(__dirname, '..', 'public'),
     prefix: '/',

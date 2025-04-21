@@ -83,7 +83,7 @@ export function render() {
   requestAnimationFrame(() => initStars())
 
   // 🎯 拉取用户比赛记录
-fetch(`http://localhost:3000/users/${user.id}/matches`, {
+fetch(`https://localhost:3000/users/${user.id}/matches`, {
   method: "GET",
   headers: {'Authorization': `Bearer ${localStorage.getItem('authToken')}`}
 })
@@ -170,7 +170,7 @@ document.getElementById('losses')!.textContent = String(losses)
 	}
   
 	try {
-	  const res = await fetch('http://localhost:3000/users/profile', {
+	  const res = await fetch('https://localhost:3000/users/profile', {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('authToken')}`},
 		body: JSON.stringify({displayName, avatarBase64})

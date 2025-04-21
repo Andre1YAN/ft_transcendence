@@ -20,7 +20,7 @@ export function render() {
   // 向后端验证AI Bot用户ID
   async function verifyAIBotId() {
     try {
-      const response = await fetch('http://localhost:3000/users/special?email=ai@fake.com', {
+      const response = await fetch('https://localhost:3000/users/special?email=ai@fake.com', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
       });
       if (response.ok) {
@@ -145,7 +145,7 @@ export function render() {
         };
         console.log('发送的比赛数据:', matchData);
         
-        const res = await fetch('http://localhost:3000/users/matches', {
+        const res = await fetch('https://localhost:3000/users/matches', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

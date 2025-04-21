@@ -66,7 +66,7 @@ export function render() {
     }
 
     try {
-      const res = await fetch(`http://localhost:3000/users/${user.id}/matches`, {
+      const res = await fetch(`https://localhost:3000/users/${user.id}/matches`, {
         headers: {'Authorization': `Bearer ${localStorage.getItem('authToken')}`}
       }
       )
